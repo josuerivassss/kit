@@ -1,0 +1,12 @@
+discord.py # Discord API wrapper
+jishaku # Debugging and utility extension for discord.py
+aiohttp # Asynchronous HTTP client/server framework
+regex # Regular expression operations
+python-dotenv # Read key-value pairs from .env files
+motor # To access the MongoDB database
+deep-translator # Language translation
+Pillow # Image processing capabilities
+emoji
+pydash # Utility library for Python
+duckdb # SQL database management system
+numpy
