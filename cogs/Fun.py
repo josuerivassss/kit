@@ -12,11 +12,13 @@ class Fun(commands.Cog):
         self.show = "-# Magic Edit 🪄"
     
     @commands.hybrid_command(name="reverse")
+    @discord.app_commands.describe(text="The text to reverse")
     async def text_reverse(self, ctx: KitContext, *, text: str):
         """Reverses a text"""
         await ctx.send(content=text[::-1])
     
     @commands.hybrid_command(name="emojify")
+    @discord.app_commands.describe(text="The text to emojify")
     async def text_emojify(self, ctx: KitContext, *, text: str):
         """Emojifys a text"""
         m = re.sub("([a-zA-Z])", ":regional_indicator_\\1:", text.replace(" ", "  "))
@@ -32,6 +34,7 @@ class Fun(commands.Cog):
 
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="communism", aliases=["communist"])
+    @discord.app_commands.describe(user="The user to make a communist image of")
     async def image_communism(self, ctx: KitContext, user: Optional[discord.User]):
         """Makes a communist image of an user"""
         await ctx.defer()
@@ -44,6 +47,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="simp")
+    @discord.app_commands.describe(user="The user to make a simp image of")
     async def image_simp(self, ctx: KitContext, user: Optional[discord.User]):
         """Makes a simp image of an user"""
         await ctx.defer()
@@ -56,6 +60,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="delete")
+    @discord.app_commands.describe(user="The user to make a delete image of")
     async def image_delete(self, ctx: KitContext, user: Optional[discord.User]):
         """Makes a delete image of an user"""
         await ctx.defer()
@@ -68,6 +73,7 @@ class Fun(commands.Cog):
         
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="gay", aliases=["pride", "rainbow"])
+    @discord.app_commands.describe(user="The user to make a pride-gay image of")
     async def image_rainbow(self, ctx: KitContext, user: Optional[discord.User]):
         """Makes a pride-gay image of an user"""
         await ctx.defer()
@@ -80,6 +86,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="deepfry", aliases=["contrast"])
+    @discord.app_commands.describe(user="The user to make a deepfry image of")
     async def image_deepfry(self, ctx: KitContext, user: Optional[discord.User]):
         """Applies a deepfry filter to the avatar of an user"""
         await ctx.defer()
@@ -90,6 +97,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="gray", aliases=["bw", "grayscale"])
+    @discord.app_commands.describe(user="The user to make a grayscale image of")
     async def image_gray(self, ctx: KitContext, user: Optional[discord.User]):
         """Applies a gray-scale filter to the avatar of an user"""
         await ctx.defer()
@@ -100,6 +108,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="mirror", aliases=["invert"])
+    @discord.app_commands.describe(user="The user to make a mirror image of")
     async def image_mirror(self, ctx: KitContext, user: Optional[discord.User]):
         """Applies a gray-scale filter to the avatar of an user"""
         await ctx.defer()
@@ -110,6 +119,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="pixel")
+    @discord.app_commands.describe(user="The user to make a pixelated image of")
     async def image_pixel(self, ctx: KitContext, user: Optional[discord.User]):
         """Pixelates the avatar of an user"""
         await ctx.defer()
@@ -124,6 +134,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 7, commands.BucketType.user)
     @edit.command(name="sonic")
+    @discord.app_commands.describe(text="The text to make sonic say")
     async def image_sonic(self, ctx: KitContext, *, text: str):
         """Make a sonic says image"""
         await ctx.defer()
@@ -136,6 +147,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 7, commands.BucketType.user)
     @edit.command(name="titan")
+    @discord.app_commands.describe(text1="The text for the titan", text2="The text for the person")
     async def image_titan(self, ctx: KitContext, text1: str, text2: str):
         """Make a titan attack image"""
         await ctx.defer()
@@ -150,6 +162,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 7, commands.BucketType.user)
     @edit.command(name="twoways", aliases=["2ways"])
+    @discord.app_commands.describe(text1="The text for the left side", text2="The text for the right side")
     async def image_twoways(self, ctx: KitContext, text1: str, text2: str):
         """Make a two ways image"""
         await ctx.defer()
@@ -164,6 +177,7 @@ class Fun(commands.Cog):
     
     @commands.cooldown(1, 7, commands.BucketType.user)
     @commands.hybrid_command(name="ship")
+    @discord.app_commands.describe(user1="The first user to ship", user2="The second user to ship")
     async def image_ship(self, ctx: KitContext, user1: discord.User, user2: Optional[discord.User] = None):
         """Ships two users together"""
         await ctx.defer()

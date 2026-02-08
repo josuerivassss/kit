@@ -31,6 +31,7 @@ class Autoroles(commands.Cog):
     @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @autoroles.command(name="add")
+    @discord.app_commands.describe(usertype="The type of user to assign the role to")
     async def autoroles_add(self, ctx: KitContext, role: discord.Role, usertype: Literal["bots", "humans"] = "humans"):
         """Adds a role to the autoroles"""
         await ctx.defer()
@@ -51,6 +52,7 @@ class Autoroles(commands.Cog):
     @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     @autoroles.command(name="remove", aliases=["delete"])
+    @discord.app_commands.describe(usertype="The type of user to assign the role to")
     async def autoroles_remove(self, ctx: KitContext, role: discord.Role, usertype: Literal["bots", "humans"] = "humans"):
         """Removes a role from the autoroles"""
         await ctx.defer()

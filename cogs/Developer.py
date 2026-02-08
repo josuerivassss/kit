@@ -16,6 +16,7 @@ class Developer(commands.Cog):
     
     @commands.is_owner()
     @commands.hybrid_command(name="reload")
+    @commands.describe(path="The cog path to reload", sync_too="Whether to sync slash commands after reloading")
     async def dev_reload(self, ctx: KitContext, path: str, sync_too: bool = False):
         """Reloads a cog"""
         file_path = path.replace(".", os.sep) + ".py"
@@ -30,12 +31,14 @@ class Developer(commands.Cog):
     
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="interpolate")
+    @discord.app_commands.describe(text="The text to interpolate with locale placeholders")
     async def interpolate(self, ctx: KitContext, *, text: str):
         """Interpolates a string with locale placeholders"""
         await ctx.send_render(text)
 
     @commands.cooldown(1, 8, commands.BucketType.member)
     @commands.hybrid_command(name="help")
+    @discord.app_commands.describe(query="The command or cog to get help about")
     async def help_command(self, ctx: KitContext, *, query: str = None):
         """Get help about the bot"""
         await ctx.defer()

@@ -48,6 +48,7 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 2.5, commands.BucketType.member)
     @tags.command(name="view")
+    @discord.app_commands.describe(tag_name="The name of the tag to view")
     async def tag_view(self, ctx: KitContext, *, tag_name: str):
         """Views a tag"""
         await ctx.defer()
@@ -83,6 +84,7 @@ class Tags(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.has_permissions(manage_guild=True)
     @tags.command(name="create", aliases=["add"])
+    @discord.app_commands.describe(tag_name="The name of the tag to create", content="The content of the tag")
     async def tag_create(self, ctx: KitContext, tag_name: Annotated[str, TagName], *, content: str):
         """Creates a new tag"""
         await ctx.defer()
@@ -119,6 +121,7 @@ class Tags(commands.Cog):
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.has_permissions(manage_guild=True)
     @tags.command(name="update", aliases=["edit"])
+    @discord.app_commands.describe(tag_name="The name of the tag to update", new_content="The new content of the tag")
     async def tag_update(self, ctx: KitContext, tag_name: Annotated[str, TagName], *, new_content: str):
         """Updates a tag content"""
         await ctx.defer()
@@ -140,6 +143,7 @@ class Tags(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 4, commands.BucketType.member)
     @tags.command(name="delete", aliases=["remove"])
+    @discord.app_commands.describe(tag_name="The name of the tag to delete")
     async def tag_delete(self, ctx: KitContext, tag_name: Annotated[str, TagName]):
         """Removes a tag"""
         await ctx.defer()

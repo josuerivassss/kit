@@ -12,6 +12,7 @@ class Utility(commands.Cog):
 
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.command(name="avatar", aliases=["av"])
+    @discord.app_commands.describe(user="The user to show the avatar of")
     async def avatar_alias(self, ctx: KitContext, user: Optional[discord.User]):
         await self.avatar(ctx, user)
 
@@ -22,6 +23,7 @@ class Utility(commands.Cog):
     
     @commands.cooldown(1, 4, commands.BucketType.member)
     @user.command(name="avatar")
+    @discord.app_commands.describe(user="The user to show the avatar of")
     async def avatar(self, ctx: KitContext, user: Optional[discord.User]):
         """Shows the avatar of an user"""
         await ctx.defer()
@@ -35,6 +37,7 @@ class Utility(commands.Cog):
 
     @commands.cooldown(1, 4, commands.BucketType.member)
     @user.command(name="info")
+    @discord.app_commands.describe(user="The user to show the information of")
     async def info(self, ctx: KitContext, user: Optional[discord.User | discord.Member]):
         """Shows information about an user"""
         await ctx.defer()
@@ -148,6 +151,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 4, commands.BucketType.member)
     @server.command(name="role")
+    @discord.app_commands.describe(role="The role to show information about")
     async def role(self, ctx: KitContext, *, role: discord.Role):
         """Shows information about a role"""
         await ctx.defer()
@@ -166,6 +170,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 4, commands.BucketType.member)
     @server.command(name="channel")
+    @discord.app_commands.describe(channel="The channel to show information about")
     async def channel(self, ctx: KitContext, *, channel: Optional[discord.abc.GuildChannel]):
         """Shows information about a channel"""
         await ctx.defer()
@@ -230,6 +235,7 @@ class Utility(commands.Cog):
     @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.member)
     @emoji.command(name="info")
+    @discord.app_commands.describe(emoji="The emoji to show information about")
     async def emoji_info(self, ctx: KitContext, *, emoji: discord.Emoji):
         """Shows information about an emoji"""
         await ctx.defer()
@@ -252,7 +258,8 @@ class Utility(commands.Cog):
     
     @commands.guild_only()
     @commands.cooldown(1, 5, commands.BucketType.member)
-    @emoji.command(name="image")
+    @emoji.command(name="image", aliases=["url", "jumbo"])
+    @discord.app_commands.describe(emoji="The emoji to show the image of")
     async def emoji_image(self, ctx: KitContext, emoji: str):
         """Shows the image of an emoji"""
         await ctx.defer()
@@ -270,6 +277,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_emojis=True)
     @commands.has_permissions(manage_emojis=True)
     @emoji.command(name="add")
+    @discord.app_commands.describe(url="The URL of the emoji to add", name="The name of the emoji to add")
     async def emoji_add(self, ctx: KitContext, url: str, name: Optional[str] = "unknown"):
         """Adds an emoji to the server from a URL"""
         await ctx.defer()
@@ -295,6 +303,7 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_emojis=True)
     @commands.has_permissions(manage_emojis=True)
     @emoji.command(name="remove")
+    @discord.app_commands.describe(emoji="The emoji to remove from the server")
     async def emoji_remove(self, ctx: KitContext, emoji: discord.Emoji):
         """Removes an emoji from the server"""
         await ctx.defer()
@@ -307,6 +316,7 @@ class Utility(commands.Cog):
     
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="quote")
+    @discord.app_commands.describe(message="The message to quote")
     async def quote(self, ctx: KitContext, *, message: discord.Message):
         """Quotes a message"""
         await ctx.defer()
@@ -319,6 +329,7 @@ class Utility(commands.Cog):
     
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="image", aliases=["img"])
+    @discord.app_commands.describe(query="The search query to find an image for")
     async def image(self, ctx: KitContext, *, query: str):
         """Searches for an image using Bing Image Search"""
         T = await ctx.get_locale()
@@ -343,6 +354,7 @@ class Utility(commands.Cog):
     
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.hybrid_command(name="color", aliases=["hex"])
+    @discord.app_commands.describe(hex_code="The hex code of the color to show information about")
     async def color(self, ctx: KitContext, hex_code: str):
         """Shows information about a color given its hex code"""
         await ctx.defer()
@@ -381,6 +393,7 @@ class Utility(commands.Cog):
     
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.hybrid_command(name="country", aliases=["nation"])
+    @discord.app_commands.describe(country_code="The country name or code to show information about")
     async def country(self, ctx: KitContext, country_code: str):
         """Shows information about a country"""
         await ctx.defer()
@@ -414,6 +427,7 @@ class Utility(commands.Cog):
     
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="translate", aliases=["translator"])
+    @discord.app_commands.describe(target="The target language code", text="The text to translate")
     async def translate(self, ctx: KitContext, target: str, *, text: str):
         """Translates a text to a target language using Google Translate"""
         await ctx.defer()

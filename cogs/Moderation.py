@@ -10,6 +10,7 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(manage_channels=True)
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.hybrid_command(name="lockdown", aliases=["lock"])
+    @discord.app_commands.describe(channel="The channel to lockdown")
     async def lockdown(self, ctx: KitContext, channel: discord.TextChannel = None):
         """Locks a channel for everyone"""
         await ctx.defer()
@@ -26,6 +27,7 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(manage_channels=True)
     @commands.bot_has_guild_permissions(manage_channels=True)
     @commands.hybrid_command(name="unlockdown", aliases=["unlock"])
+    @discord.app_commands.describe(channel="The channel to unlock")
     async def unlockdown(self, ctx: KitContext, channel: discord.TextChannel = None):
         """Unlocks a channel for everyone"""
         await ctx.defer()
@@ -42,6 +44,7 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(moderate_members=True)
     @commands.bot_has_guild_permissions(moderate_members=True)
     @commands.hybrid_command(name="timeout", aliases=["tempmute"])
+    @discord.app_commands.describe(duration="The duration of the timeout in seconds", member="The member to timeout")
     async def timeout(self, ctx: KitContext, member: discord.Member, duration: int, *, reason: str = None):
         """Timeouts a member for a certain amount of seconds"""
         await ctx.defer()
@@ -68,6 +71,7 @@ class Moderation(commands.Cog):
     @commands.has_guild_permissions(moderate_members=True)
     @commands.bot_has_guild_permissions(moderate_members=True)
     @commands.hybrid_command(name="untimeout", aliases=["untimemute"])
+    @discord.app_commands.describe(member="The member to untimeout")
     async def untimeout(self, ctx: KitContext, member: discord.Member, *, reason: str = None):
         """Untimeouts a member"""
         await ctx.defer()
@@ -91,6 +95,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(manage_messages=True)
     @commands.has_guild_permissions(manage_messages=True)
     @commands.hybrid_command(name="clear", aliases=["purge", "clean"])
+    @discord.app_commands.describe(amount="The amount of messages to clear", member="The member whose messages to clear")
     async def clear(self, ctx: KitContext, amount: int = 10, member: discord.Member = None):
         """Clears a number of messages in the channel"""
         await ctx.defer()
@@ -108,6 +113,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(kick_members=True)
     @commands.has_guild_permissions(kick_members=True)
     @commands.hybrid_command(name="kick")
+    @discord.app_commands.describe(member="The member to kick", reason="The reason for the kick")
     async def kick(self, ctx: KitContext, member: discord.Member, *, reason: str = None):
         """Kicks a member from the server"""
         await ctx.defer()
@@ -129,6 +135,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(ban_members=True)
     @commands.has_guild_permissions(ban_members=True)
     @commands.hybrid_command(name="ban")
+    @discord.app_commands.describe(member="The member to ban", reason="The reason for the ban")
     async def ban(self, ctx: KitContext, member: discord.Member, *, reason: str = None):
         """Bans a member from the server"""
         await ctx.defer()
@@ -150,6 +157,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_guild_permissions(ban_members=True)
     @commands.has_guild_permissions(ban_members=True)
     @commands.hybrid_command(name="unban")
+    @discord.app_commands.describe(user="The user to unban", reason="The reason for the unban")
     async def unban(self, ctx: KitContext, user: discord.User, *, reason: str = None):
         """Unbans a member from the server"""
         await ctx.defer()
