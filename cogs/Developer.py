@@ -16,7 +16,7 @@ class Developer(commands.Cog):
     
     @commands.is_owner()
     @commands.hybrid_command(name="reload")
-    @commands.describe(path="The cog path to reload", sync_too="Whether to sync slash commands after reloading")
+    @discord.app_commands.describe(path="The cog path to reload", sync_too="Whether to sync slash commands after reloading")
     async def dev_reload(self, ctx: KitContext, path: str, sync_too: bool = False):
         """Reloads a cog"""
         file_path = path.replace(".", os.sep) + ".py"
