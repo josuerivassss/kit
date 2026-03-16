@@ -1,8 +1,6 @@
 from core.kernel import KitBot, KitTreeClass
-import discord, os, asyncio, dotenv
+import discord, os, asyncio
 from discord.ext import commands
-
-dotenv.load_dotenv()
 
 os.environ["JISHAKU_NO_UNDERSCORE"] = "True"
 os.environ["JISHAKU_NO_DM_TRACEBACK"] = "True" 
