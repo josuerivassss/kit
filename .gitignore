@@ -3,4 +3,5 @@ __pycache__
 .env
 .vscode
 installer.py
+start.sh
 /.git
