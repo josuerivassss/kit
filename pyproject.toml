@@ -1,0 +1,88 @@
+[project]
+name = "bcommie"
+version = "2.0.0"
+description = "B-Commie: a scalable, multi-shard Discord bot with a dual-database persistence layer."
+readme = "README.md"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [{ name = "B-Commie Contributors" }]
+
+dependencies = [
+    "discord.py==2.7.1",
+    "jishaku==2.7.5",
+    "aiohttp==3.14.1",
+    "regex==2026.6.28",
+    "python-dotenv==1.2.2",
+    "motor==3.7.1",
+    "pymongo==4.17.0",
+    "asyncpg==0.31.0",
+    "deep-translator==1.11.4",
+    "Pillow==12.3.0",
+    "emoji==2.15.0",
+    "pydash==8.0.6",
+    "numpy==2.5.0",
+    "pytz==2026.2",
+    "tzdata==2026.2",
+    "pydantic==2.13.4",
+    "pydantic-settings==2.14.2",
+    "structlog==26.1.0",
+    "tenacity==9.1.4",
+]
+
+[project.optional-dependencies]
+dashboard = ["fastapi==0.139.0", "uvicorn[standard]==0.50.0"]
+dev = [
+    "pytest==9.1.1",
+    "pytest-asyncio==1.4.0",
+    "pytest-cov==7.1.0",
+    "ruff==0.15.20",
+    "mypy==2.1.0",
+    "bandit==1.9.4",
+    "types-pytz==2026.2.0.20260518",
+]
+
+[project.scripts]
+bcommie = "bcommie.main:run"
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# ---------------------------------------------------------------------------
+# Ruff: linting + formatting (replaces black/isort/flake8)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ASYNC", "S"]
+ignore = ["S101"]  # allow `assert` in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]
+
+# ---------------------------------------------------------------------------
+# mypy: static typing
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.13"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra --cov=bcommie --cov-report=term-missing"

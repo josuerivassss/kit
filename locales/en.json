@@ -174,7 +174,9 @@
         "clearAmountInvalid": "The amount of messages to clear is invalid.",
         "clearAmountInvalidHint": "Must be between 1 and 100",
         "userNotBanned": "This user is not banned.",
-        "viewNotForYou": "This action is not for you."
+        "viewNotForYou": "This action is not for you.",
+        "invalidHTTPCode": "Invalid HTTP status code.",
+        "invalidHTTPCodeHint": "Please provide a valid HTTP status code (e.g., 404, 500)."
     }, 
     "reminders": {
         "add": {

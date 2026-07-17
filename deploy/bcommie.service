@@ -1,0 +1,46 @@
+# systemd service for B-Commie (no Docker).
+#
+# Install (run on the VPS, as a user with sudo):
+#   sudo cp deploy/bcommie.service /etc/systemd/system/bcommie.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now bcommie
+#
+# Before installing, edit the two paths below (WorkingDirectory, ExecStart,
+# EnvironmentFile) to match where you deployed the project and the user
+# that should run it. Defaults assume:
+#   - project deployed to /home/bcommie/b-commie-v2
+#   - a venv created at /home/bcommie/b-commie-v2/.venv
+#   - a dedicated, non-root system user named "bcommie" (see README.md)
+#
+# Useful commands once installed:
+#   sudo systemctl status bcommie      # check it's running
+#   sudo systemctl restart bcommie     # restart after a code update
+#   sudo journalctl -u bcommie -f      # follow logs live
+
+[Unit]
+Description=B-Commie Discord bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bcommie
+Group=bcommie
+WorkingDirectory=/home/bcommie/b-commie-v2
+EnvironmentFile=/home/bcommie/b-commie-v2/.env
+ExecStart=/home/bcommie/b-commie-v2/.venv/bin/python -m bcommie.main
+
+# Auto-restart if the process crashes or Discord drops the connection hard.
+Restart=on-failure
+RestartSec=5
+
+# Basic hardening (safe defaults for a bot that only needs network + its
+# own working directory).
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/bcommie/b-commie-v2
+
+[Install]
+WantedBy=multi-user.target

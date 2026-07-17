@@ -174,7 +174,9 @@
         "clearAmountInvalid": "La cantidad de mensajes a eliminar es inválida.",
         "clearAmountInvalidHint": "Debe estar entre 1 y 100",
         "userNotBanned": "Este usuario no está baneado.",
-        "viewNotForYou": "Esta acción no es para ti."
+        "viewNotForYou": "Esta acción no es para ti.",
+        "invalidHTTPCode": "Código de estado HTTP inválido.",
+        "invalidHTTPCodeHint": "Por favor proporciona un código de estado HTTP válido (por ejemplo, 404, 500)."
     },
     "reminders": {
         "add": {

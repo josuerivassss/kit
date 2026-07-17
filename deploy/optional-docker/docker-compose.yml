@@ -1,0 +1,18 @@
+version: "3.9"
+
+# Optional: only needed if you prefer Docker over the native systemd setup
+# described in the main README.md. MongoDB Atlas and Neon (PostgreSQL) are
+# external cloud services here, not containers — this only runs the bot
+# process itself.
+#
+# Run from the repository root:
+#   docker compose -f deploy/optional-docker/docker-compose.yml up -d --build
+
+services:
+  bot:
+    build:
+      context: ../..
+      dockerfile: deploy/optional-docker/Dockerfile
+    restart: unless-stopped
+    env_file: ../../.env
+    mem_limit: 400m
