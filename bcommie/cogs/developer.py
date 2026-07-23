@@ -4,6 +4,7 @@ from discord.ext import commands
 from bcommie.kernel import CommieBot, CommieContext, CommieEmojis
 from bcommie.help import send_help, send_help_cog, send_help_group, send_help_command
 from bcommie.kernel import AnswerType
+from bcommie.ui.paginator import Paginator
 
 class Developer(commands.Cog):
     def __init__(self, bot: CommieBot):
@@ -94,6 +95,67 @@ class Developer(commands.Cog):
         embed.add_field(name="Python", value=sys.version.split(' ')[0], inline=True)
         embed.add_field(name="Platform", value=sys.platform, inline=True)
         await ctx.send(embed=embed)
+    
+    @commands.is_owner()
+    @commands.hybrid_group(name="dashboard")
+    async def dashboard(self, ctx: CommieContext):
+        """Manages web dashboard access (owner-only)"""
+        if ctx.invoked_subcommand is None:
+            cmd = self.bot.get_command("dashboard")
+            await send_help_group(ctx, cmd, self.bot.slash_cache, await ctx.get_locale())
+
+    @commands.is_owner()
+    @dashboard.command(name="grant")
+    @discord.app_commands.describe(user="The Discord user to grant dashboard access to")
+    async def dashboard_grant(self, ctx: CommieContext, user: discord.User):
+        """Grants a user access to the web dashboard"""
+        await ctx.defer()
+        # Single existence check avoids an unnecessary write when already granted
+        if await self.bot.db.exists(table="dashboard_access", id=user.id):
+            await ctx.answer(f"**{user}** already has dashboard access.", type=AnswerType.Info)
+            return
+        await self.bot.db.set(
+            table="dashboard_access",
+            id=user.id,
+            data={"granted_by": ctx.author.id, "granted_at": int(discord.utils.utcnow().timestamp())},
+        )
+        await ctx.answer(f"Dashboard access granted to **{user}**.", type=AnswerType.Ok)
+
+    @commands.is_owner()
+    @dashboard.command(name="revoke")
+    @discord.app_commands.describe(user="The Discord user to revoke dashboard access from")
+    async def dashboard_revoke(self, ctx: CommieContext, user: discord.User):
+        """Revokes a user's access to the web dashboard"""
+        await ctx.defer()
+        deleted = await self.bot.db.delete(table="dashboard_access", id=user.id)
+        if not deleted:
+            await ctx.answer(f"**{user}** does not have dashboard access.", type=AnswerType.Info)
+            return
+        await ctx.answer(f"Dashboard access revoked from **{user}**.", type=AnswerType.Ok)
+    
+    @commands.is_owner()
+    @dashboard.command(name="list")
+    async def dashboard_list(self, ctx: CommieContext):
+        """Lists every user currently authorized to use the web dashboard"""
+        await ctx.defer()
+        T = await ctx.get_locale()
+        authorized = await self.bot.db.find(table="dashboard_access", filter={}, projection={"_id": 1})
+        if not authorized:
+            await ctx.answer("No users currently have dashboard access.", type=AnswerType.Info)
+            return
+
+        PER_PAGE = 10
+        pages: list[list[dict]] = [authorized[i:i + PER_PAGE] for i in range(0, len(authorized), PER_PAGE)]
+        embed = discord.Embed(title="Dashboard Access", colour=discord.Color.dark_red())
+        embed.set_author(name=ctx.guild.name if ctx.guild else self.bot.user.name, icon_url=self.bot.user.display_avatar)
+
+        def render(page_items: list[dict], page: int, total: int):
+            embed.description = "\n".join(f"<@{doc['_id']}> (`{doc['_id']}`)" for doc in page_items)
+            embed.set_footer(text=T.get("paginator.footer", page=page + 1, total=total))
+
+        paginator = Paginator(data=pages, ctx=ctx, locale=T, embed=embed, render=render)
+        paginator.update_item()
+        paginator.message = await ctx.send(embed=embed, view=paginator)
 
 async def setup(bot: CommieBot):
     await bot.add_cog(Developer(bot))

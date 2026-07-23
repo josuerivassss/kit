@@ -41,20 +41,6 @@ CREATE TABLE IF NOT EXISTS user_timezones (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- New in v2: audit trail for privileged/moderation actions (see security.py).
-CREATE TABLE IF NOT EXISTS audit_log (
-    id          BIGSERIAL PRIMARY KEY,
-    actor_id    BIGINT NOT NULL,
-    guild_id    BIGINT,
-    action      VARCHAR(64) NOT NULL,
-    target_id   BIGINT,
-    details     TEXT NOT NULL DEFAULT '',
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-CREATE INDEX IF NOT EXISTS idx_audit_log_guild_created ON audit_log (guild_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log (actor_id, created_at DESC);
-
 COMMIT;
 
 -- Recommended (run manually by a DBA, not by the application):

@@ -5,7 +5,6 @@ Every action that changes a member's standing is now also written to the
 from discord.ext import commands
 from bcommie.kernel import CommieBot, CommieContext
 from bcommie.timeparse import load
-from bcommie.security import audit
 import discord
 
 class Moderation(commands.Cog):
@@ -72,7 +71,6 @@ class Moderation(commands.Cog):
             raise commands.CommandError(T.get("errors.timeoutDurationInvalid"), T.get("errors.timeoutDurationInvalidHint"))
         until = discord.utils.utcnow() + discord.timedelta(seconds=duration)
         await member.timeout(until, reason=reason or f"Timeout by {ctx.author} ({ctx.author.id})")
-        await audit(self.bot, actor_id=ctx.author.id, guild_id=ctx.guild.id, action="timeout", target_id=member.id, details=reason or "")
         await ctx.answer(T.get("success.memberTimedOut", member=member.mention, duration=duration), type="success", bold=False)
     
     @commands.cooldown(1, 4, commands.BucketType.member)
@@ -137,7 +135,6 @@ class Moderation(commands.Cog):
         if member.guild_permissions.administrator:
             raise commands.CommandError(T.get("errors.cantActionAdmin"))
         await member.kick(reason=reason or f"Kick by {ctx.author} ({ctx.author.id})")
-        await audit(self.bot, actor_id=ctx.author.id, guild_id=ctx.guild.id, action="kick", target_id=member.id, details=reason or "")
         await ctx.answer(T.get("success.memberKicked", member=member.mention), type="success", bold=False)
     
     @commands.cooldown(1, 8, commands.BucketType.member)
@@ -160,7 +157,6 @@ class Moderation(commands.Cog):
         if member.guild_permissions.administrator:
             raise commands.CommandError(T.get("errors.cantActionAdmin"))
         await member.ban(reason=reason or f"Ban by {ctx.author} ({ctx.author.id})")
-        await audit(self.bot, actor_id=ctx.author.id, guild_id=ctx.guild.id, action="ban", target_id=member.id, details=reason or "")
         await ctx.answer(T.get("success.memberBanned", member=member.mention), type="success", bold=False)
 
     @commands.cooldown(1, 8, commands.BucketType.member)
@@ -176,7 +172,6 @@ class Moderation(commands.Cog):
         if not any(ban_entry.user.id == user.id for ban_entry in bans):
             raise commands.CommandError(T.get("errors.userNotBanned"))
         await ctx.guild.unban(user, reason=reason or f"Unban by {ctx.author} ({ctx.author.id})")
-        await audit(self.bot, actor_id=ctx.author.id, guild_id=ctx.guild.id, action="unban", target_id=user.id, details=reason or "")
         await ctx.answer(T.get("success.memberUnbanned", user=str(user)), type="success", bold=False)
     
 async def setup(bot: CommieBot):

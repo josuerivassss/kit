@@ -16,7 +16,7 @@ e.g.:
     SHARD_COUNT=8 SHARD_IDS=4,5,6,7 CLUSTER_ID=1 python -m bcommie.main
 
 Every process shares the same MongoDB and PostgreSQL backends, so state
-(reminders, tags, config, audit log) is consistent cluster-wide regardless
+(reminders, tags, config) is consistent cluster-wide regardless
 of which process owns a given guild's shard.
 """
 from __future__ import annotations

@@ -7,7 +7,7 @@ reminders/giveaways state across processes. PostgreSQL is a proper client-
 server database, so every shard/cluster process shares one consistent
 connection pool and one source of truth.
 
-Used for: reminders, giveaways, user timezones, audit log.
+Used for: reminders, giveaways, user timezones
 Security model is unchanged from v1: table names come from an explicit
 whitelist, column names are regex-validated, and every value is bound as a
 query parameter (asyncpg never interpolates values into SQL text).
@@ -29,7 +29,7 @@ COLUMN_NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 JSON_PATH_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$")
 _SQL_KEYWORDS = {"SELECT", "DROP", "DELETE", "INSERT", "UPDATE", "FROM", "WHERE"}
 
-ALLOWED_TABLES: set[str] = {"reminders", "giveaways", "user_timezones", "audit_log"}
+ALLOWED_TABLES: set[str] = {"reminders", "giveaways", "user_timezones"}
 
 
 class PostgresDatabaseManager:

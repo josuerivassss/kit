@@ -95,7 +95,19 @@
         "memberBanned": "{member} has been banned!",
         "memberUnbanned": "{member} has been unbanned!",
         "memberKicked": "{member} has been kicked!",
-        "messagesCleared": "**{count}** messages have been cleared in {channel}!"
+        "messagesCleared": "**{count}** messages have been cleared in {channel}!",
+        "starboardEnabled": "Starboard has been enabled!",
+        "starboardDisabled": "Starboard has been disabled!",
+        "starboardChannelSet": "Starboard channel set to {channel}!",
+        "starboardEmojiSet": "Starboard emoji set to {emoji}!",
+        "starboardThresholdSet": "Starboard threshold set to {amount} star(s)!",
+        "starboardSelfStarsEnabled": "Authors can now star their own messages!",
+        "starboardSelfStarsDisabled": "Authors can no longer star their own messages!",
+        "ticketParentSet": "Ticket parent channel set to {channel}!",
+        "ticketRoleSet": "Ticket staff role set to {role}!",
+        "ticketMessageSet": "Ticket welcome message updated!",
+        "ticketPanelPosted": "Ticket panel posted in {channel}!",
+        "ticketCreated": "Your ticket has been created: {channel}"
     },
     "errors": {
         "unauthorized": "You don't have authorization to execute this action.",
@@ -176,7 +188,19 @@
         "userNotBanned": "This user is not banned.",
         "viewNotForYou": "This action is not for you.",
         "invalidHTTPCode": "Invalid HTTP status code.",
-        "invalidHTTPCodeHint": "Please provide a valid HTTP status code (e.g., 404, 500)."
+        "invalidHTTPCodeHint": "Please provide a valid HTTP status code (e.g., 404, 500).",
+        "cantSeeChannel": "I don't have permission to send messages in that channel.",
+        "cantSeeChannelHint": "Grant me Send Messages and Embed Links there.",
+        "invalidThreshold": "Invalid star threshold.",
+        "invalidThresholdHint": "Must be between 1 and 500",
+        "ticketNotConfigured": "Tickets aren't fully configured yet.",
+        "ticketNotConfiguredHint": "An admin must set a parent channel first.",
+        "ticketMissingPermissions": "I don't have permission to create private threads there.",
+        "ticketMissingPermissionsHint": "Grant me Create Private Threads and Send Messages in Threads.",
+        "ticketAlreadyOpen": "You already have an open ticket: {channel}",
+        "ticketMessageLength": "Message must be between 5 and 1800 characters.",
+        "ticketRoleTooLargeWarning": "Heads up: this role has {count} members and doesn't have \"Manage Threads\" — I can't auto-invite everyone to new tickets. Grant the role \"Manage Threads\" so staff can see tickets automatically.",
+        "notATicket": "This command can only be used inside a ticket thread."
     }, 
     "reminders": {
         "add": {
@@ -233,5 +257,23 @@
             "title": "Reminder",
             "no_message": "*(No message)*"
         }
+    },
+    "tickets": {
+        "panelTitle": "Need help?",
+        "panelDescription": "Click the button below to open a private ticket with our staff.",
+        "closingNotice": "Ticket closed by {closer}. A transcript is attached below.",
+        "modalTitle": "Open a Ticket",
+        "modalKeywordLabel": "Keyword",
+        "modalKeywordPlaceholder": "Briefly summarize your issue",
+        "modalDescriptionLabel": "Description",
+        "modalDescriptionPlaceholder": "Explain your issue in detail",
+        "embedTitle": "\ud83c\udfab Ticket",
+        "summaryLabel": "Summary",
+        "descriptionLabel": "Description"
+    },
+    "afk": {
+        "set": "You are now AFK: {reason}",
+        "welcomeBack": "Welcome back, {user}! I've removed your AFK status.",
+        "userIsAfk": "{user} is AFK: {reason}"
     }
 }

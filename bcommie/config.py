@@ -41,7 +41,6 @@ class Settings(BaseSettings):
 
     # Security
     command_rate_limit_per_minute: int = Field(default=20, alias="COMMAND_RATE_LIMIT_PER_MINUTE")
-    enable_audit_log: bool = Field(default=True, alias="ENABLE_AUDIT_LOG")
 
     # Dashboard (extensibility)
     dashboard_enabled: bool = Field(default=False, alias="DASHBOARD_ENABLED")

@@ -1,16 +1,54 @@
 """Utility cog: profile/server info, roles, emojis, currency conversion, translation, image search."""
-import re, discord, datetime, calendar as Calendar
+import time, discord, datetime, calendar as Calendar, asyncio
 from typing import Optional
-from discord.ext import commands
+from discord.ext import commands, tasks
 from deep_translator import GoogleTranslator
 from bcommie.kernel import CommieBot, CommieContext, CommieEmojis
 from bcommie.ui.paginator import Paginator
 from http import HTTPStatus
+from ddgs import DDGS
 
 class Utility(commands.Cog):
 
     def __init__(self, bot: CommieBot):
         self.bot = bot
+        self._image_search_semaphore = asyncio.Semaphore(3)  # cap concurrent blocking ddgs calls
+        # In-memory set of currently-AFK users -- avoids a Postgres read on
+        # every single message (most messages are from non-AFK users and
+        # mention nobody AFK). Reconciled periodically to tolerate
+        # multi-process clusters where another process's afk/unafk isn't
+        # visible locally yet.
+        self._afk_cache: dict[int, dict] = {}
+
+    async def cog_load(self):
+        await self._reload_afk_cache()
+        self.reconcile_afk_cache.start()
+
+    async def cog_unload(self):
+        self.reconcile_afk_cache.cancel()
+
+    async def _reload_afk_cache(self):
+        try:
+            rows = await self.bot.sql.find(table="afk_status", where={})
+            self._afk_cache = {row["id"]: row for row in rows}
+        except Exception:
+            pass  # keep the previous cache on transient DB failure
+
+    @tasks.loop(seconds=60)
+    async def reconcile_afk_cache(self):
+        await self._reload_afk_cache()
+
+    @reconcile_afk_cache.before_loop
+    async def before_reconcile_afk_cache(self):
+        await self.bot.wait_until_ready()
+
+    @staticmethod
+    def _ddg_image_search(query: str, max_results: int = 15) -> list[dict]:
+        # backend="auto" lets ddgs pick/fallback between its supported
+        # engines (bing, duckduckgo) automatically on rate limits/errors --
+        # source doesn't matter here, only avoiding a hard failure does.
+        with DDGS() as ddgs:
+            return list(ddgs.images(query, backend="auto", safesearch="moderate", max_results=max_results))
 
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.command(name="avatar", aliases=["av"])
@@ -331,16 +369,18 @@ class Utility(commands.Cog):
     @commands.hybrid_command(name="image", aliases=["img"])
     @discord.app_commands.describe(query="The search query to find an image for")
     async def image(self, ctx: CommieContext, *, query: str):
-        """Searches for an image using Bing Image Search"""
+        """Searches for an image using DuckDuckGo"""
+        await ctx.defer()
         T = await ctx.get_locale()
-        res: bytes | None = await self.bot.toolkit.request(url=f"https://www.bing.com/images/async?q={query}&adlt=on", extract="bytes")
-        if not res:
+        async with self._image_search_semaphore:
+            try:
+                results = await asyncio.to_thread(self._ddg_image_search, query)
+            except Exception:
+                raise commands.CommandError(T.get("errors.noImageResults"), T.get("errors.noImageResultsHint"))
+        if not results:
             raise commands.CommandError(T.get("errors.noImageResults"), T.get("errors.noImageResultsHint"))
 
-        links = re.findall(r'murl&quot;:&quot;(.*?)&quot;', res.decode("utf8"))
-        if not links:
-            raise commands.CommandError(T.get("errors.noImageResults"), T.get("errors.noImageResultsHint"))
-
+        links = [r["image"] for r in results]
         embed = discord.Embed(color=discord.Color.dark_red())
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar)
         embed.set_image(url=links[0])
@@ -422,6 +462,42 @@ class Utility(commands.Cog):
             await ctx.send(content=f"## **`{status.value}` {status.phrase} {CommieEmojis.Developer}**\n{status.description}\nhttps://http.cat/{status.value}.jpg")
         except ValueError:
             raise commands.CommandError(T.get("errors.invalidHTTPCode"), T.get("errors.invalidHTTPCodeHint"))
+
+    @commands.cooldown(1, 5, commands.BucketType.user)
+    @commands.hybrid_command(name="afk")
+    @discord.app_commands.describe(reason="Why you're going AFK (optional)")
+    async def afk(self, ctx: CommieContext, *, reason: str = "AFK"):
+        """Marks you as AFK; mentioning you will show your reason"""
+        await ctx.defer()
+        T = await ctx.get_locale()
+        reason = reason[:200]
+        data = {"reason": reason, "since": int(time.time())}
+        await self.bot.sql.set(table="afk_status", id=ctx.author.id, data=data)
+        self._afk_cache[ctx.author.id] = {"id": ctx.author.id, **data}
+        await ctx.answer(T.get("afk.set", reason=reason), type="success", bold=False)
+
+    @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.author.bot or message.guild is None:
+            return
+        T = self.bot.language.get_locale(await self._guild_language(message.guild.id))
+
+        # Author was AFK and just spoke -- welcome them back.
+        if message.author.id in self._afk_cache:
+            self._afk_cache.pop(message.author.id, None)
+            await self.bot.sql.delete(table="afk_status", id=message.author.id)
+            await message.channel.send(T.get("afk.welcomeBack", user=message.author.mention), delete_after=8)
+
+        if not message.mentions:
+            return
+        # Cap to 3 replies -- avoids a wall of messages on mass-mention spam.
+        afk_mentions = [u for u in message.mentions if u.id in self._afk_cache and u.id != message.author.id]
+        for user in afk_mentions[:3]:
+            data = self._afk_cache[user.id]
+            await message.reply(T.get("afk.userIsAfk", user=user.mention, reason=data["reason"]), mention_author=False)
+
+    async def _guild_language(self, guild_id: int) -> str:
+        return await self.bot.db.get(table="guilds", id=guild_id, path="language") or self.bot.language.default_language
 
 async def setup(bot: CommieBot):
     await bot.add_cog(Utility(bot))

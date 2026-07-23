@@ -95,7 +95,19 @@
         "memberBanned": "¡{member} ha sido baneado!",
         "memberUnbanned": "¡{member} ha sido desbaneado!",
         "memberKicked": "¡{member} ha sido expulsado!",
-        "messagesCleared": "¡**{count}** mensajes han sido eliminados en {channel}!"
+        "messagesCleared": "¡**{count}** mensajes han sido eliminados en {channel}!",
+        "starboardEnabled": "¡El starboard ha sido activado!",
+        "starboardDisabled": "¡El starboard ha sido desactivado!",
+        "starboardChannelSet": "¡Canal del starboard configurado a {channel}!",
+        "starboardEmojiSet": "¡Emoji del starboard configurado a {emoji}!",
+        "starboardThresholdSet": "¡Umbral del starboard configurado a {amount} estrella(s)!",
+        "starboardSelfStarsEnabled": "¡Los autores ahora pueden marcar con estrella sus propios mensajes!",
+        "starboardSelfStarsDisabled": "¡Los autores ya no pueden marcar con estrella sus propios mensajes!",
+        "ticketParentSet": "¡Canal padre de tickets configurado a {channel}!",
+        "ticketRoleSet": "¡Rol de staff de tickets configurado a {role}!",
+        "ticketMessageSet": "¡Mensaje de bienvenida del ticket actualizado!",
+        "ticketPanelPosted": "¡Panel de tickets publicado en {channel}!",
+        "ticketCreated": "Tu ticket ha sido creado: {channel}"
     },
     "errors": {
         "unauthorized": "No tienes autorización para ejecutar este comando.",
@@ -176,7 +188,19 @@
         "userNotBanned": "Este usuario no está baneado.",
         "viewNotForYou": "Esta acción no es para ti.",
         "invalidHTTPCode": "Código de estado HTTP inválido.",
-        "invalidHTTPCodeHint": "Por favor proporciona un código de estado HTTP válido (por ejemplo, 404, 500)."
+        "invalidHTTPCodeHint": "Por favor proporciona un código de estado HTTP válido (por ejemplo, 404, 500).",
+        "cantSeeChannel": "No tengo permiso para enviar mensajes en ese canal.",
+        "cantSeeChannelHint": "Concédeme Enviar Mensajes e Insertar Enlaces ahí.",
+        "invalidThreshold": "Umbral de estrellas inválido.",
+        "invalidThresholdHint": "Debe estar entre 1 y 500",
+        "ticketNotConfigured": "Los tickets aún no están completamente configurados.",
+        "ticketNotConfiguredHint": "Un administrador debe configurar un canal padre primero.",
+        "ticketMissingPermissions": "No tengo permiso para crear hilos privados ahí.",
+        "ticketMissingPermissionsHint": "Concédeme Crear Hilos Privados y Enviar Mensajes en Hilos.",
+        "ticketAlreadyOpen": "Ya tienes un ticket abierto: {channel}",
+        "ticketMessageLength": "El mensaje debe tener entre 5 y 1800 caracteres.",
+        "ticketRoleTooLargeWarning": "Aviso: este rol tiene {count} miembros y no tiene \"Gestionar Hilos\" — no puedo invitar automáticamente a todos a los nuevos tickets. Otórgale al rol \"Gestionar Hilos\" para que el staff vea los tickets automáticamente.",
+        "notATicket": "Este comando solo puede usarse dentro de un hilo de ticket."
     },
     "reminders": {
         "add": {
@@ -233,5 +257,23 @@
             "title": "Recordatorio",
             "no_message": "*(Sin mensaje)*"
         }
+    },
+    "tickets": {
+        "panelTitle": "¿Necesitas ayuda?",
+        "panelDescription": "Haz clic en el botón de abajo para abrir un ticket privado con nuestro staff.",
+        "closingNotice": "Ticket cerrado por {closer}. Se adjunta la transcripción abajo.",
+        "modalTitle": "Abrir un Ticket",
+        "modalKeywordLabel": "Palabra clave",
+        "modalKeywordPlaceholder": "Resume brevemente tu problema",
+        "modalDescriptionLabel": "Descripción",
+        "modalDescriptionPlaceholder": "Explica tu problema con detalle",
+        "embedTitle": "\ud83c\udfab Ticket",
+        "summaryLabel": "Resumen",
+        "descriptionLabel": "Descripción"
+    },
+    "afk": {
+        "set": "Ahora estás AFK: {reason}",
+        "welcomeBack": "¡Bienvenido de vuelta, {user}! Se ha quitado tu estado AFK.",
+        "userIsAfk": "{user} está AFK: {reason}"
     }
 }

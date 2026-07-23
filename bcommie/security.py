@@ -2,10 +2,7 @@
 
 Provides:
 - A sliding-window, per-user command rate limiter (defense against spam/abuse).
-- An audit log helper that records privileged actions (ban, kick, config
-  changes) to PostgreSQL for traceability.
 
-These are new in v2; v1 had no rate limiting or audit trail.
 """
 from __future__ import annotations
 

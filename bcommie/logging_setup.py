@@ -21,6 +21,14 @@ def configure_logging(settings: Settings) -> None:
         stream=sys.stdout,
         level=getattr(logging, settings.log_level.upper(), logging.INFO),
     )
+    # Third-party HTTP clients (aiohttp, httpx, and whatever curl_cffi/primp
+    # backend ddgs uses under the hood) log every single request at INFO/DEBUG
+    # by default. Since they propagate to the root logger configured above,
+    # they'd otherwise flood output with every outbound call (including full
+    # query strings -- a privacy concern for something like image search).
+    # Keep only warnings/errors from these; our own loggers are unaffected.
+    for noisy_logger in ("aiohttp", "aiohttp.client", "httpx", "httpcore", "curl_cffi", "primp"):
+        logging.getLogger(noisy_logger).setLevel(logging.WARNING)
 
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
