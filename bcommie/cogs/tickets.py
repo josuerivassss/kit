@@ -10,21 +10,26 @@ No per-ticket record is persisted in Mongo -- the private thread itself
 (named `ticket-{user_id}`) is the source of truth for "does this user
 already have an open ticket", checked against `guild.threads` (already
 cached by discord.py, no extra fetch needed). Only guild-level config
-(parent channel, staff role, welcome message) is stored, under
+(staff role, welcome message, panel location) is stored, under
 `guilds.tickets`, written only when an admin configures it.
 
-Discord threads have no `topic` field (unlike text channels) -- the
-keyword/description summary is pinned to the thread instead, as the
-closest functional equivalent.
+The ticket channel doubles as the panel's location and the thread parent --
+`interaction.channel` at click/modal-submit time already IS that channel,
+so no channel id needs to be read back from config to create a thread.
+`panel_channel_id`/`panel_message_id` exist solely to retire the previous
+panel's message when a new one is posted: persistent views route by
+custom_id, not by message, so an old, un-deleted panel message would keep
+working even after a new one is created elsewhere.
 
 GUILDS TABLE
 
 "_id": Guild ID (int)
 "tickets": {
     "enabled": bool,
-    "parent_channel_id": int | None,
     "staff_role_id": int | None,
     "welcome_message": str,
+    "panel_channel_id": int | None,
+    "panel_message_id": int | None,
 }
 """
 from __future__ import annotations
@@ -44,9 +49,10 @@ logger = get_logger(__name__)
 
 DEFAULT_TICKETS: dict[str, Any] = {
     "enabled": False,
-    "parent_channel_id": None,
     "staff_role_id": None,
     "welcome_message": "Welcome {user.mention}! Support will be with you shortly.",
+    "panel_channel_id": None,
+    "panel_message_id": None,
 }
 
 _CONFIG_CACHE_TTL = 15.0
@@ -146,17 +152,52 @@ class Tickets(commands.Cog):
             await ctx.send_help(ctx.command)
 
     @commands.has_permissions(manage_guild=True)
-    @ticket.command(name="parent")
-    @discord.app_commands.describe(channel="The text channel under which ticket threads are created")
-    async def ticket_parent(self, ctx: CommieContext, channel: discord.TextChannel):
-        """Sets the parent channel for ticket threads"""
+    @ticket.command(name="channel")
+    @discord.app_commands.describe(channel="The channel where the ticket panel is posted and threads are created under")
+    async def ticket_channel(self, ctx: CommieContext, channel: discord.TextChannel):
+        """Sets the ticket channel, retiring any previous panel and posting a new one"""
         await ctx.defer()
         T = await ctx.get_locale()
         perms = channel.permissions_for(ctx.guild.me)
-        if not perms.create_private_threads or not perms.send_messages_in_threads:
+        if not perms.create_private_threads or not perms.send_messages_in_threads or not perms.embed_links:
             raise commands.CommandError(T.get("errors.ticketMissingPermissions"), T.get("errors.ticketMissingPermissionsHint"))
-        await self._update_config(ctx.guild.id, "parent_channel_id", channel.id)
-        await ctx.answer(T.get("success.ticketParentSet", channel=channel.mention), type="success")
+
+        config = await self._get_config(ctx.guild.id)
+        await self._retire_previous_panel(ctx.guild, config)
+
+        embed = discord.Embed(
+            title=T.get("tickets.panelTitle"),
+            description=T.get("tickets.panelDescription"),
+            colour=discord.Color.dark_red(),
+        )
+        try:
+            message = await channel.send(embed=embed, view=TicketPanelView(self))
+        except (discord.Forbidden, discord.HTTPException):
+            raise commands.CommandError(T.get("errors.ticketMissingPermissions"), T.get("errors.ticketMissingPermissionsHint"))
+
+        await self._update_config(ctx.guild.id, "panel_channel_id", channel.id)
+        await self._update_config(ctx.guild.id, "panel_message_id", message.id)
+        await self._update_config(ctx.guild.id, "enabled", True)
+        await ctx.answer(T.get("success.ticketChannelSet", channel=channel.mention), type="success")
+
+    async def _retire_previous_panel(self, guild: discord.Guild, config: dict[str, Any]) -> None:
+        """Deletes the previous panel message, if any -- persistent views
+        route by custom_id, not by message, so a stale un-deleted panel
+        would keep letting users open tickets from the old channel too."""
+        old_channel_id, old_message_id = config.get("panel_channel_id"), config.get("panel_message_id")
+        if not old_channel_id or not old_message_id:
+            return
+        old_channel = guild.get_channel(old_channel_id)
+        if old_channel is None:
+            try:
+                old_channel = await guild.fetch_channel(old_channel_id)
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                return
+        try:
+            old_message = await old_channel.fetch_message(old_message_id)
+            await old_message.delete()
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            pass  # already gone or inaccessible -- nothing to retire
 
     @commands.has_permissions(manage_guild=True)
     @ticket.command(name="role")
@@ -166,8 +207,6 @@ class Tickets(commands.Cog):
         await self._update_config(ctx.guild.id, "staff_role_id", role.id)
         T = await ctx.get_locale()
         await ctx.answer(T.get("success.ticketRoleSet", role=role.mention), type="success")
-        # Proactive warning at setup time -- better than silently failing to
-        # add members on every future ticket for a role this size.
         if not role.permissions.manage_threads and len(role.members) > _MAX_STAFF_AUTO_ADD:
             await ctx.send(T.get("errors.ticketRoleTooLargeWarning", count=len(role.members)), delete_after=20)
 
@@ -183,34 +222,33 @@ class Tickets(commands.Cog):
         await ctx.answer(T.get("success.ticketMessageSet"), type="success")
 
     @commands.has_permissions(manage_guild=True)
-    @ticket.command(name="panel")
-    @discord.app_commands.describe(channel="Channel to post the ticket panel in (defaults to here)")
-    async def ticket_panel(self, ctx: CommieContext, channel: discord.TextChannel = None):
-        """Posts the ticket-opening panel"""
-        await ctx.defer()
+    @ticket.command(name="enable", aliases=["on"])
+    async def ticket_enable(self, ctx: CommieContext):
+        """Re-enables tickets (after a channel is already configured)"""
         T = await ctx.get_locale()
         config = await self._get_config(ctx.guild.id)
-        if not config["parent_channel_id"]:
+        if not config["panel_channel_id"]:
             raise commands.CommandError(T.get("errors.ticketNotConfigured"), T.get("errors.ticketNotConfiguredHint"))
-        target = channel or ctx.channel
-        embed = discord.Embed(
-            title=T.get("tickets.panelTitle"),
-            description=T.get("tickets.panelDescription"),
-            colour=discord.Color.dark_red(),
-        )
-        await target.send(embed=embed, view=TicketPanelView(self))
         await self._update_config(ctx.guild.id, "enabled", True)
-        await ctx.answer(T.get("success.ticketPanelPosted", channel=target.mention), type="success")
+        await ctx.answer(T.get("success.ticketEnabled"), type="success")
+
+    @commands.has_permissions(manage_guild=True)
+    @ticket.command(name="disable", aliases=["off"])
+    async def ticket_disable(self, ctx: CommieContext):
+        """Disables tickets without losing the saved configuration"""
+        await self._update_config(ctx.guild.id, "enabled", False)
+        T = await ctx.get_locale()
+        await ctx.answer(T.get("success.ticketDisabled"), type="success")
 
     # -- ticket lifecycle ---------------------------------------------------
 
     async def handle_open_button(self, interaction: discord.Interaction) -> None:
         """Pre-checks before showing the modal -- no point asking the user
-        to fill it out if tickets aren't configured or they already have one."""
+        to fill it out if tickets aren't enabled or they already have one."""
         T = self.bot.language.get_locale(await self._guild_language(interaction.guild_id))
         config = await self._get_config(interaction.guild_id)
 
-        if not config["enabled"] or not config["parent_channel_id"]:
+        if not config["enabled"]:
             await interaction.response.send_message(T.get("errors.ticketNotConfigured"), ephemeral=True)
             return
 
@@ -236,7 +274,7 @@ class Tickets(commands.Cog):
 
         # Re-check right before creating the thread -- guards the narrow
         # race window between the button pre-check and the modal submit.
-        if not config["enabled"] or not config["parent_channel_id"]:
+        if not config["enabled"]:
             await interaction.followup.send(T.get("errors.ticketNotConfigured"), ephemeral=True)
             return
         existing = self._existing_ticket(interaction.guild, interaction.user.id)
@@ -244,8 +282,8 @@ class Tickets(commands.Cog):
             await interaction.followup.send(T.get("errors.ticketAlreadyOpen", channel=existing.mention), ephemeral=True)
             return
 
-        parent = interaction.guild.get_channel(config["parent_channel_id"])
-        if parent is None:
+        parent = interaction.channel  # the panel's own channel doubles as the thread parent
+        if not isinstance(parent, discord.TextChannel):
             await interaction.followup.send(T.get("errors.ticketNotConfigured"), ephemeral=True)
             return
 
@@ -294,9 +332,6 @@ class Tickets(commands.Cog):
         role = guild.get_role(config["staff_role_id"])
         if role is None:
             return
-        # "Manage Threads" already grants visibility into every private
-        # thread in the channel -- no per-member invite needed, and no
-        # size limit to worry about either.
         if role.permissions.manage_threads:
             return
         members = role.members

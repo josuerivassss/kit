@@ -103,11 +103,12 @@
         "starboardThresholdSet": "¡Umbral del starboard configurado a {amount} estrella(s)!",
         "starboardSelfStarsEnabled": "¡Los autores ahora pueden marcar con estrella sus propios mensajes!",
         "starboardSelfStarsDisabled": "¡Los autores ya no pueden marcar con estrella sus propios mensajes!",
-        "ticketParentSet": "¡Canal padre de tickets configurado a {channel}!",
         "ticketRoleSet": "¡Rol de staff de tickets configurado a {role}!",
         "ticketMessageSet": "¡Mensaje de bienvenida del ticket actualizado!",
-        "ticketPanelPosted": "¡Panel de tickets publicado en {channel}!",
-        "ticketCreated": "Tu ticket ha sido creado: {channel}"
+        "ticketCreated": "Tu ticket ha sido creado: {channel}",
+        "ticketChannelSet": "¡Canal de tickets configurado a {channel} — el panel ya fue publicado ahí!",
+        "ticketEnabled": "¡Los tickets han sido reactivados!",
+        "ticketDisabled": "Los tickets han sido desactivados."
     },
     "errors": {
         "unauthorized": "No tienes autorización para ejecutar este comando.",
@@ -194,9 +195,9 @@
         "invalidThreshold": "Umbral de estrellas inválido.",
         "invalidThresholdHint": "Debe estar entre 1 y 500",
         "ticketNotConfigured": "Los tickets aún no están completamente configurados.",
-        "ticketNotConfiguredHint": "Un administrador debe configurar un canal padre primero.",
+        "ticketNotConfiguredHint": "Un administrador debe configurar un canal de tickets primero.",
         "ticketMissingPermissions": "No tengo permiso para crear hilos privados ahí.",
-        "ticketMissingPermissionsHint": "Concédeme Crear Hilos Privados y Enviar Mensajes en Hilos.",
+        "ticketMissingPermissionsHint": "Concédeme Crear Hilos Privados, Enviar Mensajes en Hilos e Insertar Enlaces ahí.",
         "ticketAlreadyOpen": "Ya tienes un ticket abierto: {channel}",
         "ticketMessageLength": "El mensaje debe tener entre 5 y 1800 caracteres.",
         "ticketRoleTooLargeWarning": "Aviso: este rol tiene {count} miembros y no tiene \"Gestionar Hilos\" — no puedo invitar automáticamente a todos a los nuevos tickets. Otórgale al rol \"Gestionar Hilos\" para que el staff vea los tickets automáticamente.",

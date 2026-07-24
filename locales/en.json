@@ -103,11 +103,12 @@
         "starboardThresholdSet": "Starboard threshold set to {amount} star(s)!",
         "starboardSelfStarsEnabled": "Authors can now star their own messages!",
         "starboardSelfStarsDisabled": "Authors can no longer star their own messages!",
-        "ticketParentSet": "Ticket parent channel set to {channel}!",
         "ticketRoleSet": "Ticket staff role set to {role}!",
         "ticketMessageSet": "Ticket welcome message updated!",
-        "ticketPanelPosted": "Ticket panel posted in {channel}!",
-        "ticketCreated": "Your ticket has been created: {channel}"
+        "ticketCreated": "Your ticket has been created: {channel}",
+        "ticketChannelSet": "Ticket channel set to {channel} — the panel has been posted there!",
+        "ticketEnabled": "Tickets have been re-enabled!",
+        "ticketDisabled": "Tickets have been disabled."
     },
     "errors": {
         "unauthorized": "You don't have authorization to execute this action.",
@@ -194,9 +195,9 @@
         "invalidThreshold": "Invalid star threshold.",
         "invalidThresholdHint": "Must be between 1 and 500",
         "ticketNotConfigured": "Tickets aren't fully configured yet.",
-        "ticketNotConfiguredHint": "An admin must set a parent channel first.",
+        "ticketNotConfiguredHint": "An admin must set a ticket channel first.",
         "ticketMissingPermissions": "I don't have permission to create private threads there.",
-        "ticketMissingPermissionsHint": "Grant me Create Private Threads and Send Messages in Threads.",
+        "ticketMissingPermissionsHint": "Grant me Create Private Threads, Send Messages in Threads, and Embed Links there.",
         "ticketAlreadyOpen": "You already have an open ticket: {channel}",
         "ticketMessageLength": "Message must be between 5 and 1800 characters.",
         "ticketRoleTooLargeWarning": "Heads up: this role has {count} members and doesn't have \"Manage Threads\" — I can't auto-invite everyone to new tickets. Grant the role \"Manage Threads\" so staff can see tickets automatically.",
