@@ -164,12 +164,21 @@ class Greetings(commands.Cog):
         if not guild_data or not guild_data.get("welcome") or not guild_data["welcome"].get("enabled") or not guild_data["welcome"].get("channel"):
             return
         channel_id = guild_data["welcome"]["channel"]
-        message = guild_data.get("welcome", {}).get("message", self.default_welcome_message)
+        message = (guild_data.get("welcome", {}).get("message") or "").strip() or self.default_welcome_message
         channel = member.guild.get_channel(channel_id)
         if not channel:
             return
         fake_ctx = CommieContext.create_for_event(self.bot, member, guild=member.guild) # Create a fake context for interpolation
-        await channel.send(await self.bot.toolkit.interpolation.render(message, fake_ctx))
+        result = await self.bot.toolkit.interpolation.render(message, fake_ctx)
+        content = result.content.strip() if result.content else None
+        if not content and not result.embeds:
+            content = "\u200b"
+        sent = await channel.send(content=content, embeds=result.embeds[:10])
+        for reaction in result.emojis[:20]:
+            try:
+                await sent.add_reaction(reaction)
+            except discord.HTTPException:
+                continue
 
     @commands.Cog.listener()
     async def on_member_remove(self, member: discord.Member):
@@ -177,12 +186,21 @@ class Greetings(commands.Cog):
         if not guild_data or not guild_data.get("leave") or not guild_data["leave"].get("enabled") or not guild_data["leave"].get("channel"):
             return
         channel_id = guild_data["leave"]["channel"]
-        message = guild_data.get("leave", {}).get("message", self.default_leave_message)
+        message = (guild_data.get("leave", {}).get("message") or "").strip() or self.default_leave_message
         channel = member.guild.get_channel(channel_id)
         if not channel:
             return
         fake_ctx = CommieContext.create_for_event(self.bot, member, guild=member.guild) # Create a fake context for interpolation
-        await channel.send(await self.bot.toolkit.interpolation.render(message, fake_ctx))
+        result = await self.bot.toolkit.interpolation.render(message, fake_ctx)
+        content = result.content.strip() if result.content else None
+        if not content and not result.embeds:
+            content = "\u200b"
+        sent = await channel.send(content=content, embeds=result.embeds[:10])
+        for reaction in result.emojis[:20]:
+            try:
+                await sent.add_reaction(reaction)
+            except discord.HTTPException:
+                continue
     
 
 async def setup(bot: CommieBot):

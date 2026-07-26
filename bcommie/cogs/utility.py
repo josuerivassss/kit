@@ -20,6 +20,9 @@ class Utility(commands.Cog):
         # visible locally yet.
         self._afk_cache: dict[int, dict] = {}
 
+    async def _guild_language(self, guild_id: int) -> str:
+        return await self.bot.db.get(table="guilds", id=guild_id, path="language") or self.bot.language.default_language
+
     async def cog_load(self):
         await self._reload_afk_cache()
         self.reconcile_afk_cache.start()
@@ -471,15 +474,18 @@ class Utility(commands.Cog):
         await ctx.defer()
         T = await ctx.get_locale()
         reason = reason[:200]
-        data = {"reason": reason, "since": int(time.time())}
+        data = {"reason": reason, "since": datetime.datetime.now(datetime.UTC)}
         await self.bot.sql.set(table="afk_status", id=ctx.author.id, data=data)
         self._afk_cache[ctx.author.id] = {"id": ctx.author.id, **data}
-        await ctx.answer(T.get("afk.set", reason=reason), type="success", bold=False)
+        await ctx.answer(T.get("afk.set", reason=reason), type="success")
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot or message.guild is None:
             return
+        ctx = await self.bot.get_context(message)
+        if ctx.valid:
+            return  # command invocations (including /afk itself) don't count as "speaking"
         T = self.bot.language.get_locale(await self._guild_language(message.guild.id))
 
         # Author was AFK and just spoke -- welcome them back.
@@ -490,14 +496,10 @@ class Utility(commands.Cog):
 
         if not message.mentions:
             return
-        # Cap to 3 replies -- avoids a wall of messages on mass-mention spam.
         afk_mentions = [u for u in message.mentions if u.id in self._afk_cache and u.id != message.author.id]
         for user in afk_mentions[:3]:
             data = self._afk_cache[user.id]
             await message.reply(T.get("afk.userIsAfk", user=user.mention, reason=data["reason"]), mention_author=False)
-
-    async def _guild_language(self, guild_id: int) -> str:
-        return await self.bot.db.get(table="guilds", id=guild_id, path="language") or self.bot.language.default_language
 
 async def setup(bot: CommieBot):
     await bot.add_cog(Utility(bot))

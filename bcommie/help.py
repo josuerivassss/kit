@@ -92,10 +92,15 @@ class HelpView(discord.ui.View):
         self.locale = locale
     
     async def on_timeout(self):
-        components = self.from_message(await self.message.fetch())
-        for i in range(0, len(components.children)):
-            components.children[i].disabled = True
-        await self.message.edit(view=components)
+        if not self.message:
+            return
+        try:
+            components = self.from_message(await self.message.fetch())
+            for i in range(0, len(components.children)):
+                components.children[i].disabled = True
+            await self.message.edit(view=components)
+        except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+            pass
     
     async def interaction_check(self, interaction: discord.Interaction):
         if self.ctx.author.id != interaction.user.id:

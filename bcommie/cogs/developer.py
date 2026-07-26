@@ -41,6 +41,7 @@ class Developer(commands.Cog):
     
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="interpolate")
+    @commands.is_owner()
     @discord.app_commands.describe(text="The text to interpolate with locale placeholders")
     async def interpolate(self, ctx: CommieContext, *, text: str):
         """Interpolates a string with locale placeholders"""
@@ -80,7 +81,7 @@ class Developer(commands.Cog):
         """Shows information about the bot, including shard/cluster placement."""
         uptime = datetime.datetime.now(datetime.UTC) - self.bot.start_time
         shard_id = ctx.guild.shard_id if ctx.guild else 0
-        embed = discord.Embed(colour=discord.Color.dark_red(), description="Here's my software specifications! " + CommieEmojis.Developer)
+        embed = discord.Embed(colour=discord.Color.dark_red())
         embed.set_thumbnail(url=str(ctx.bot.user.display_avatar).replace(".webp", ".png"))
         embed.add_field(name="Developer", value="@cofue", inline=True)
         embed.add_field(name="Servers", value=len(ctx.bot.guilds), inline=True)
@@ -91,10 +92,10 @@ class Developer(commands.Cog):
         embed.add_field(name="Shard", value=f"{shard_id} / {self.bot.shard_count or 1}", inline=True)
         embed.add_field(name="Cluster", value=str(self.bot.settings.cluster_id), inline=True)
         embed.add_field(name="Library", value=f"discord.py@{discord.__version__}", inline=True)
-        embed.add_field(name="Version", value="2.0.0", inline=True)
+        embed.add_field(name="Version", value="1.0.0", inline=True)
         embed.add_field(name="Python", value=sys.version.split(' ')[0], inline=True)
         embed.add_field(name="Platform", value=sys.platform, inline=True)
-        await ctx.send(embed=embed)
+        await ctx.send(content="Here's my software specifications! " + CommieEmojis.Developer, embed=embed)
     
     @commands.is_owner()
     @commands.hybrid_group(name="dashboard")

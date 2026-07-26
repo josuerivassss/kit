@@ -100,7 +100,7 @@
         "starboardDisabled": "¡El starboard ha sido desactivado!",
         "starboardChannelSet": "¡Canal del starboard configurado a {channel}!",
         "starboardEmojiSet": "¡Emoji del starboard configurado a {emoji}!",
-        "starboardThresholdSet": "¡Umbral del starboard configurado a {amount} estrella(s)!",
+        "starboardThresholdSet": "¡Umbral del starboard configurado a `{amount}` estrella(s)!",
         "starboardSelfStarsEnabled": "¡Los autores ahora pueden marcar con estrella sus propios mensajes!",
         "starboardSelfStarsDisabled": "¡Los autores ya no pueden marcar con estrella sus propios mensajes!",
         "ticketRoleSet": "¡Rol de staff de tickets configurado a {role}!",
@@ -108,7 +108,15 @@
         "ticketCreated": "Tu ticket ha sido creado: {channel}",
         "ticketChannelSet": "¡Canal de tickets configurado a {channel} — el panel ya fue publicado ahí!",
         "ticketEnabled": "¡Los tickets han sido reactivados!",
-        "ticketDisabled": "Los tickets han sido desactivados."
+        "ticketDisabled": "Los tickets han sido desactivados.",
+        "welcomeEnabled": "¡Los mensajes de bienvenida han sido activados!",
+        "leaveEnabled": "¡Los mensajes de despedida han sido activados!",
+        "welcomeDisabled": "¡Los mensajes de bienvenida han sido desactivados!",
+        "leaveDisabled": "¡Los mensajes de despedida han sido desactivados!",
+        "welcomeChannelSet": "¡Canal de bienvenida configurado a {channel}!",
+        "leaveChannelSet": "¡Canal de despedida configurado a {channel}!",
+        "welcomeMessageSet": "¡Mensaje de bienvenida actualizado!",
+        "leaveMessageSet": "¡Mensaje de despedida actualizado!"
     },
     "errors": {
         "unauthorized": "No tienes autorización para ejecutar este comando.",
@@ -270,11 +278,14 @@
         "modalDescriptionPlaceholder": "Explica tu problema con detalle",
         "embedTitle": "\ud83c\udfab Ticket",
         "summaryLabel": "Resumen",
-        "descriptionLabel": "Descripción"
+        "descriptionLabel": "Descripción",
+        "ticketClosed": "¡Tu ticket ha sido cerrado exitosamente!",
+        "ticketCloseFailed": "No se pudo cerrar el ticket. Por favor intenta de nuevo más tarde.",
+        "tryingToClose": "Intentando cerrar el ticket..."
     },
     "afk": {
-        "set": "Ahora estás AFK: {reason}",
-        "welcomeBack": "¡Bienvenido de vuelta, {user}! Se ha quitado tu estado AFK.",
-        "userIsAfk": "{user} está AFK: {reason}"
+        "set": "¡He configurado tu estado AFK!",
+        "welcomeBack": "¡Bienvenido de vuelta, {user}! He quitado tu estado AFK.",
+        "userIsAfk": "¡Ups! Parece que {user} está actualmente **AFK**: {reason}"
     }
 }

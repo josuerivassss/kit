@@ -100,7 +100,7 @@
         "starboardDisabled": "Starboard has been disabled!",
         "starboardChannelSet": "Starboard channel set to {channel}!",
         "starboardEmojiSet": "Starboard emoji set to {emoji}!",
-        "starboardThresholdSet": "Starboard threshold set to {amount} star(s)!",
+        "starboardThresholdSet": "Starboard threshold set to `{amount}` star(s)!",
         "starboardSelfStarsEnabled": "Authors can now star their own messages!",
         "starboardSelfStarsDisabled": "Authors can no longer star their own messages!",
         "ticketRoleSet": "Ticket staff role set to {role}!",
@@ -108,7 +108,15 @@
         "ticketCreated": "Your ticket has been created: {channel}",
         "ticketChannelSet": "Ticket channel set to {channel} — the panel has been posted there!",
         "ticketEnabled": "Tickets have been re-enabled!",
-        "ticketDisabled": "Tickets have been disabled."
+        "ticketDisabled": "Tickets have been disabled.",
+        "welcomeEnabled": "Welcome messages have been enabled!",
+        "leaveEnabled": "Leave messages have been enabled!",
+        "welcomeDisabled": "Welcome messages have been disabled.",
+        "leaveDisabled": "Leave messages have been disabled!",
+        "welcomeChannelSet": "Welcome channel set to {channel}!",
+        "leaveChannelSet": "Leave channel set to {channel}!",
+        "welcomeMessageSet": "Welcome message updated!",
+        "leaveMessageSet": "Leave message updated!"
     },
     "errors": {
         "unauthorized": "You don't have authorization to execute this action.",
@@ -270,11 +278,14 @@
         "modalDescriptionPlaceholder": "Explain your issue in detail",
         "embedTitle": "\ud83c\udfab Ticket",
         "summaryLabel": "Summary",
-        "descriptionLabel": "Description"
+        "descriptionLabel": "Description",
+        "ticketClosed": "Your ticket has been closed successfully!",
+        "ticketCloseFailed": "Failed to close the ticket. Please try again later.",
+        "tryingToClose": "Attempting to close the ticket..."
     },
     "afk": {
-        "set": "You are now AFK: {reason}",
+        "set": "I've set your AFK status!",
         "welcomeBack": "Welcome back, {user}! I've removed your AFK status.",
-        "userIsAfk": "{user} is AFK: {reason}"
+        "userIsAfk": "Ops! It seems that {user} is currently **AFK**: {reason}"
     }
 }

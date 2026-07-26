@@ -29,7 +29,7 @@ COLUMN_NAME_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 JSON_PATH_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_.]*$")
 _SQL_KEYWORDS = {"SELECT", "DROP", "DELETE", "INSERT", "UPDATE", "FROM", "WHERE"}
 
-ALLOWED_TABLES: set[str] = {"reminders", "giveaways", "user_timezones"}
+ALLOWED_TABLES: set[str] = {"reminders", "giveaways", "user_timezones", "afk_status"}
 
 
 class PostgresDatabaseManager:

@@ -48,7 +48,7 @@ class Autoroles(commands.Cog):
             raise commands.CommandError(T.get("errors.autoroleAlreadyExists"), T.get("errors.autoroleAlreadyExistsHint"))
         roles.append(role.id)
         await self.bot.db.set(table="guilds", id=ctx.guild.id, path=f"autoroles.{usertype}", value=roles)
-        await ctx.answer(T.get("success.autoroleAdded", name=role.name), type="success")
+        await ctx.answer(T.get("success.autoroleAdded", name=role.name), type="success", deleteAfter=5)
     
     @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
@@ -65,7 +65,7 @@ class Autoroles(commands.Cog):
             raise commands.CommandError(T.get("errors.autoroleNotFound"), T.get("errors.autoroleNotFoundHint"))
         roles = [r for r in roles if r != role.id]
         await self.bot.db.set(table="guilds", id=ctx.guild.id, path=f"autoroles.{usertype}", value=roles)
-        await ctx.answer(T.get("success.autoroleRemoved", name=role.name), type="success")
+        await ctx.answer(T.get("success.autoroleRemoved", name=role.name), type="success", deleteAfter=5)
     
     @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)

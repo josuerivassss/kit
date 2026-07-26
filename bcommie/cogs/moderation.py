@@ -26,7 +26,7 @@ class Moderation(commands.Cog):
         overwrite = target_channel.overwrites_for(ctx.guild.default_role)
         overwrite.send_messages = False
         await target_channel.set_permissions(ctx.guild.default_role, overwrite=overwrite, reason=f"Lockdown by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.channelLocked", channel=target_channel.mention), type="success", bold=False)
+        await ctx.answer(T.get("success.channelLocked", channel=target_channel.mention), type="success")
     
     @commands.cooldown(1, 5, commands.BucketType.member)
     @commands.has_guild_permissions(manage_channels=True)
@@ -43,8 +43,8 @@ class Moderation(commands.Cog):
         overwrite = target_channel.overwrites_for(ctx.guild.default_role)
         overwrite.send_messages = None
         await target_channel.set_permissions(ctx.guild.default_role, overwrite=overwrite, reason=f"Unlockdown by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.channelUnlocked", channel=target_channel.mention), type="success", bold=False)
-    
+        await ctx.answer(T.get("success.channelUnlocked", channel=target_channel.mention), type="success")
+
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.has_guild_permissions(moderate_members=True)
     @commands.bot_has_guild_permissions(moderate_members=True)
@@ -71,7 +71,7 @@ class Moderation(commands.Cog):
             raise commands.CommandError(T.get("errors.timeoutDurationInvalid"), T.get("errors.timeoutDurationInvalidHint"))
         until = discord.utils.utcnow() + discord.timedelta(seconds=duration)
         await member.timeout(until, reason=reason or f"Timeout by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.memberTimedOut", member=member.mention, duration=duration), type="success", bold=False)
+        await ctx.answer(T.get("success.memberTimedOut", member=member.mention, duration=duration), type="success")
     
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.has_guild_permissions(moderate_members=True)
@@ -95,7 +95,7 @@ class Moderation(commands.Cog):
         if member.timed_out_until is None:
             raise commands.CommandError(T.get("errors.memberNotTimedOut"))
         await member.timeout(None, reason=reason or f"Untimeout by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.memberUntimedOut", member=member.mention), type="success", bold=False)
+        await ctx.answer(T.get("success.memberUntimedOut", member=member.mention), type="success")
     
     @commands.cooldown(1, 8, commands.BucketType.member)
     @commands.bot_has_guild_permissions(manage_messages=True)
@@ -113,7 +113,7 @@ class Moderation(commands.Cog):
                 return m.author.id == member.id
             return True
         deleted = await ctx.channel.purge(limit=amount, check=check, reason=f"Clear by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.messagesCleared", count=len(deleted)), type="success", bold=False)
+        await ctx.answer(T.get("success.messagesCleared", count=len(deleted), channel=ctx.channel.mention), type="success", bold=False, deleteAfter=5)
     
     @commands.cooldown(1, 8, commands.BucketType.member)
     @commands.bot_has_guild_permissions(kick_members=True)
@@ -135,7 +135,7 @@ class Moderation(commands.Cog):
         if member.guild_permissions.administrator:
             raise commands.CommandError(T.get("errors.cantActionAdmin"))
         await member.kick(reason=reason or f"Kick by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.memberKicked", member=member.mention), type="success", bold=False)
+        await ctx.answer(T.get("success.memberKicked", member=member.mention), type="success")
     
     @commands.cooldown(1, 8, commands.BucketType.member)
     @commands.bot_has_guild_permissions(ban_members=True)
@@ -157,7 +157,7 @@ class Moderation(commands.Cog):
         if member.guild_permissions.administrator:
             raise commands.CommandError(T.get("errors.cantActionAdmin"))
         await member.ban(reason=reason or f"Ban by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.memberBanned", member=member.mention), type="success", bold=False)
+        await ctx.answer(T.get("success.memberBanned", member=member.mention), type="success")
 
     @commands.cooldown(1, 8, commands.BucketType.member)
     @commands.bot_has_guild_permissions(ban_members=True)
@@ -168,11 +168,13 @@ class Moderation(commands.Cog):
         """Unbans a member from the server"""
         await ctx.defer()
         T = await ctx.get_locale()
-        bans = await ctx.guild.bans()
-        if not any(ban_entry.user.id == user.id for ban_entry in bans):
+
+        try:
+            await ctx.guild.unban(user, reason=reason or f"Unban by {ctx.author} ({ctx.author.id})")
+        except discord.NotFound:
             raise commands.CommandError(T.get("errors.userNotBanned"))
-        await ctx.guild.unban(user, reason=reason or f"Unban by {ctx.author} ({ctx.author.id})")
-        await ctx.answer(T.get("success.memberUnbanned", user=str(user)), type="success", bold=False)
+
+        await ctx.answer(T.get("success.memberUnbanned", user=str(user)), type="success")
     
 async def setup(bot: CommieBot):
     await bot.add_cog(Moderation(bot))

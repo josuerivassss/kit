@@ -276,7 +276,7 @@ class Reminders(commands.Cog):
         T = await ctx.get_locale()
         reminder = await self.bot.sql.get(table="reminders", id=reminder_id)
         if not reminder:
-            raise commands.CommandError(T.get("reminders.remove.not_found"))
+            raise commands.CommandError(T.get("reminders.remove.not_found", id=reminder_id))
         if reminder['user_id'] != ctx.author.id:
             raise commands.CommandError(T.get("reminders.remove.not_owner"))
         await self.bot.sql.delete(table="reminders", id=reminder_id)

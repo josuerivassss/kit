@@ -26,7 +26,10 @@ class BaseView(discord.ui.View):
         for child in self.children:
             child.disabled = True  # type: ignore[attr-defined]
         if self.message:
-            await self.message.edit(view=self)
+            try:
+                await self.message.edit(view=self)
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                pass
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         expected_user_id = self.ctx.author.id
@@ -43,5 +46,8 @@ class BaseView(discord.ui.View):
         for child in self.children:
             child.disabled = True  # type: ignore[attr-defined]
         if self.message:
-            await self.message.edit(view=self)
+            try:
+                await self.message.edit(view=self)
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                pass
         self.stop()

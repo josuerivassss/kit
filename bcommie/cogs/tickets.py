@@ -41,8 +41,9 @@ from typing import Any
 import discord
 from discord.ext import commands
 
-from bcommie.kernel import CommieBot, CommieContext
-from bcommie.kernel.context import CommieContext as _EventContext
+from bcommie.help import send_help_group
+from bcommie.kernel import CommieBot, CommieContext, CommieEmojis
+from bcommie.kernel.context import AnswerType, CommieContext as _EventContext
 from bcommie.logging_setup import get_logger
 
 logger = get_logger(__name__)
@@ -60,11 +61,11 @@ _MAX_STAFF_AUTO_ADD = 50  # cap on how many staff-role members get thread.add_us
 _TRANSCRIPT_HISTORY_LIMIT = 2000
 _KEYWORD_MAX_LENGTH = 100
 _DESCRIPTION_MAX_LENGTH = 1000
+_BANNER_IMAGE_URL = "https://i.imgur.com/k9zLycU.png"
 
 
 def _thread_name(user_id: int) -> str:
     return f"ticket-{user_id}"
-
 
 class TicketModal(discord.ui.Modal):
     """Collects a short keyword and a longer description before the
@@ -94,7 +95,7 @@ class TicketPanelView(discord.ui.View):
         super().__init__(timeout=None)
         self.cog = cog
 
-    @discord.ui.button(label="Open Ticket", style=discord.ButtonStyle.blurple, custom_id="tickets:open", emoji="\U0001f3ab")
+    @discord.ui.button(label="Open", style=discord.ButtonStyle.blurple, custom_id="tickets:open", emoji="\U0001f3ab")
     async def open_ticket(self, interaction: discord.Interaction, _: discord.ui.Button):
         await self.cog.handle_open_button(interaction)
 
@@ -104,7 +105,7 @@ class TicketControlView(discord.ui.View):
         super().__init__(timeout=None)
         self.cog = cog
 
-    @discord.ui.button(label="Close Ticket", style=discord.ButtonStyle.red, custom_id="tickets:close", emoji="\U0001f512")
+    @discord.ui.button(label="Close", style=discord.ButtonStyle.red, custom_id="tickets:close", emoji="\U0001f512")
     async def close_ticket(self, interaction: discord.Interaction, _: discord.ui.Button):
         await self.cog.handle_close_button(interaction)
 
@@ -144,12 +145,12 @@ class Tickets(commands.Cog):
 
     # -- configuration commands ------------------------------------------------
 
-    @commands.hybrid_group(name="ticket")
-    @commands.has_permissions(manage_guild=True)
+    @commands.hybrid_group(name="ticket", aliases=["tickets"])
     async def ticket(self, ctx: CommieContext):
         """Ticket system configuration"""
         if ctx.invoked_subcommand is None:
-            await ctx.send_help(ctx.command)
+            cmd = self.bot.get_command("ticket")
+            await send_help_group(ctx, cmd, self.bot.slash_cache, await ctx.get_locale())
 
     @commands.has_permissions(manage_guild=True)
     @ticket.command(name="channel")
@@ -169,7 +170,10 @@ class Tickets(commands.Cog):
             title=T.get("tickets.panelTitle"),
             description=T.get("tickets.panelDescription"),
             colour=discord.Color.dark_red(),
+            timestamp=discord.utils.utcnow()
         )
+        embed.set_image(url=_BANNER_IMAGE_URL)
+        embed.set_footer(text="Commie Tickets", icon_url=self.bot.user.display_avatar.url)
         try:
             message = await channel.send(embed=embed, view=TicketPanelView(self))
         except (discord.Forbidden, discord.HTTPException):
@@ -312,7 +316,7 @@ class Tickets(commands.Cog):
         message = await thread.send(content=content, embed=embed, view=TicketControlView(self),
                                      allowed_mentions=discord.AllowedMentions(users=True, roles=True))
         try:
-            await message.pin()  # closest available substitute for a thread "topic"
+            await message.pin()
         except (discord.Forbidden, discord.HTTPException):
             pass
 
@@ -324,6 +328,8 @@ class Tickets(commands.Cog):
         rendered = await self.bot.toolkit.interpolation.render(template, fake_ctx)
         body = f"{rendered.content}\n\n**{locale.get('tickets.summaryLabel')}:** {keyword}\n\n**{locale.get('tickets.descriptionLabel')}:**\n{description}"
         embed = discord.Embed(title=locale.get("tickets.embedTitle"), description=body, colour=discord.Color.dark_red())
+        embed.set_image(url=_BANNER_IMAGE_URL)
+        embed.set_footer(text="Commie Tickets", icon_url=self.bot.user.display_avatar.url)
         return embed
 
     async def _grant_staff_access(self, thread: discord.Thread, guild: discord.Guild, config: dict[str, Any]) -> None:
@@ -346,21 +352,31 @@ class Tickets(commands.Cog):
 
     async def handle_close_button(self, interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=True)
-        await self._close_ticket(interaction.channel, interaction.user, interaction)
+        closed = await self._close_ticket(interaction.channel, interaction.user, interaction)
+        if closed:
+            T = self.bot.language.get_locale(await self._guild_language(interaction.guild_id))
+            # await interaction.followup.send(T.get("tickets.ticketClosed"), ephemeral=True)
 
     @commands.hybrid_command(name="close")
     async def ticket_close(self, ctx: CommieContext):
         """Closes the current ticket (usable inside a ticket thread)"""
         await ctx.defer(ephemeral=True)
-        await self._close_ticket(ctx.channel, ctx.author, None)
+        T = await ctx.get_locale()
+        m = await ctx.answer(T.get("tickets.tryingToClose"), type="info")
+        closed = await self._close_ticket(ctx.channel, ctx.author, None)
+        if closed:
+            if ctx.interaction:
+                await m.edit(content=T.get("tickets.ticketClosed") + CommieEmojis.Heart)
+        else:
+            await m.edit(content=T.get("tickets.ticketCloseFailed") + CommieEmojis.Crying)
 
-    async def _close_ticket(self, channel: discord.abc.Messageable, closer: discord.abc.User, interaction: discord.Interaction | None) -> None:
+    async def _close_ticket(self, channel: discord.abc.Messageable, closer: discord.abc.User, interaction: discord.Interaction | None) -> bool:
         guild_id = channel.guild.id if hasattr(channel, "guild") else None
         T = self.bot.language.get_locale(await self._guild_language(guild_id) if guild_id else self.bot.language.default_language)
 
         if not isinstance(channel, discord.Thread) or not channel.name.startswith("ticket-"):
-            await self._respond(interaction, channel, T.get("errors.notATicket"))
-            return
+            await self._respond(interaction, channel, T.get("errors.notATicket") + " " + CommieEmojis.Crying)
+            return False
 
         config = await self._get_config(channel.guild.id)
         opener_part = channel.name.removeprefix("ticket-")
@@ -369,8 +385,8 @@ class Tickets(commands.Cog):
         has_staff_role = config["staff_role_id"] and any(r.id == config["staff_role_id"] for r in getattr(closer, "roles", []))
         has_manage = getattr(closer, "guild_permissions", None) and closer.guild_permissions.manage_threads
         if not (is_opener or has_staff_role or has_manage):
-            await self._respond(interaction, channel, T.get("errors.unauthorized"))
-            return
+            await self._respond(interaction, channel, T.get("errors.unauthorized") + " " + CommieEmojis.Crying)
+            return False
 
         transcript = await self._build_transcript(channel)
         try:
@@ -383,6 +399,8 @@ class Tickets(commands.Cog):
             await channel.edit(archived=True, locked=True, reason=f"Ticket closed by {closer} ({closer.id})")
         except (discord.Forbidden, discord.HTTPException):
             logger.warning("ticket_close_failed", channel_id=channel.id)
+            return False
+        return True
 
     async def _build_transcript(self, channel: discord.Thread) -> discord.File:
         lines = []
@@ -397,7 +415,7 @@ class Tickets(commands.Cog):
 
     async def _respond(self, interaction: discord.Interaction | None, channel: discord.abc.Messageable, text: str) -> None:
         if interaction is not None:
-            await interaction.followup.send(text, ephemeral=True)
+            await interaction.followup.send("**" + text + "**", ephemeral=True)
         else:
             await channel.send(text, delete_after=8)
 
