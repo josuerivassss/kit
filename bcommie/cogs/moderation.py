@@ -21,7 +21,7 @@ class Moderation(commands.Cog):
         await ctx.defer()
         T = await ctx.get_locale()
         target_channel = channel or ctx.channel
-        if not target_channel.permissions_for(ctx.guild.default_role).send_messages is not True:
+        if target_channel.permissions_for(ctx.guild.default_role).send_messages is False:
             raise commands.CommandError(T.get("errors.channelAlreadyLocked"))
         overwrite = target_channel.overwrites_for(ctx.guild.default_role)
         overwrite.send_messages = False
