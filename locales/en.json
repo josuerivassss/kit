@@ -1,5 +1,6 @@
 {
     "ping": "Pong! The latency is {ms}ms",
+    "inviteDescription": "Thanks for your interest in **Commie**!\n\nUse the buttons below to invite Commie to your server, join the official community, or explore other important project links.\n\nYour support helps drive new features, continuous improvements, and a better experience for everyone.\n\n❤️ See you around!",
     "info": {
         "created": "Created at",
         "joined": "Joined at",

@@ -6,6 +6,10 @@ from bcommie.help import send_help, send_help_cog, send_help_group, send_help_co
 from bcommie.kernel import AnswerType
 from bcommie.ui.paginator import Paginator
 
+_BOT_INVITE_URL = "https://discord.com/oauth2/authorize?client_id=1449864932731392223&permissions=8&scope=bot+applications.commands"
+_DISCORD_INVITE_URL = "https://discord.gg/SY5D4x3RB3"
+_WEB_URL = "https://commie.cofue.space"
+
 class Developer(commands.Cog):
     def __init__(self, bot: CommieBot):
         self.bot = bot
@@ -15,6 +19,19 @@ class Developer(commands.Cog):
         """Returns pong"""
         T = await ctx.get_locale()
         await ctx.send(T.get("ping", ms=round(self.bot.latency, 2)))
+    
+    @commands.hybrid_command(name="invite")
+    async def invite(self, ctx: CommieContext):
+        """Shows the bot & support server invite"""
+        T = await ctx.get_locale()
+        view = discord.ui.View().add_item(
+            discord.ui.Button(style=discord.ButtonStyle.link, label="Invite bot", url=_BOT_INVITE_URL),
+        ).add_item(
+            discord.ui.Button(style=discord.ButtonStyle.link, label="Discord server", url=_DISCORD_INVITE_URL)
+        ).add_item(
+            discord.ui.Button(style=discord.ButtonStyle.link, label="Web", url=_WEB_URL)
+        )
+        await ctx.answer(T.get("inviteDescription"), type=AnswerType.Ok, view=view)
     
     @commands.is_owner()
     @commands.hybrid_command(name="reload")

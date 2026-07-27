@@ -1,5 +1,6 @@
 {
     "ping": "¡Pong! La latencia es de {ms}ms",
+    "inviteDescription": "¡Gracias por tu interés en **Commie**!\n\nUsa los botones de abajo para invitar a Commie a tu servidor, unirte a la comunidad oficial o explorar otros enlaces importantes del proyecto.\n\nTu apoyo impulsa el desarrollo de nuevas funciones, mejoras continuas y una mejor experiencia para toda la comunidad.\n\n❤️ ¡Nos vemos en el servidor!",
     "info": {
         "created": "Creado el",
         "joined": "Se unió el",
