@@ -31,7 +31,7 @@ class Developer(commands.Cog):
         ).add_item(
             discord.ui.Button(style=discord.ButtonStyle.link, label="Web", url=_WEB_URL)
         )
-        await ctx.answer(T.get("inviteDescription"), type=AnswerType.Ok, view=view)
+        await ctx.answer(T.get("inviteDescription"), type=AnswerType.Ok, view=view, bold=False)
     
     @commands.is_owner()
     @commands.hybrid_command(name="reload")
