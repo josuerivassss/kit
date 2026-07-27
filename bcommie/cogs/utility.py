@@ -55,11 +55,16 @@ class Utility(commands.Cog):
 
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.command(name="avatar", aliases=["av"])
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     @discord.app_commands.describe(user="The user to show the avatar of")
     async def avatar_alias(self, ctx: CommieContext, user: Optional[discord.User]):
         await self.avatar(ctx, user)
 
+
     @commands.hybrid_group(name="user")
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def user(self, ctx: CommieContext):
         """Related users commands"""
         ...
@@ -233,6 +238,8 @@ class Utility(commands.Cog):
     
     @commands.cooldown(1, 4, commands.BucketType.member)
     @commands.hybrid_command(name="calendar")
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def calendar(self, ctx: CommieContext):
         """Shows a calendar"""
         await ctx.defer()
@@ -371,6 +378,8 @@ class Utility(commands.Cog):
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="image", aliases=["img"])
     @discord.app_commands.describe(query="The search query to find an image for")
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def image(self, ctx: CommieContext, *, query: str):
         """Searches for an image using DuckDuckGo"""
         await ctx.defer()
@@ -398,6 +407,8 @@ class Utility(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.user)
     @commands.hybrid_command(name="color", aliases=["hex"])
     @discord.app_commands.describe(hex_code="The hex code of the color to show information about")
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def color(self, ctx: CommieContext, hex_code: str):
         """Shows information about a color given its hex code"""
         await ctx.defer()
@@ -437,6 +448,8 @@ class Utility(commands.Cog):
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="translate", aliases=["translator"])
     @discord.app_commands.describe(target="The target language code", text="The text to translate")
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def translate(self, ctx: CommieContext, target: str, *, text: str):
         """Translates a text to a target language using Google Translate"""
         await ctx.defer()
@@ -456,6 +469,8 @@ class Utility(commands.Cog):
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="httpstatus", aliases=["httpcode", "http"])
     @discord.app_commands.describe(code="The HTTP status code to get information about")
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def httpstatus(self, ctx: CommieContext, code: int):
         """Shows information about an HTTP status code"""
         await ctx.defer()

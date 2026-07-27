@@ -32,7 +32,12 @@ class CommieBot(commands.AutoShardedBot):
     """Sharded Discord client wiring together persistence, i18n, and utilities."""
 
     def __init__(self, *args: object, settings: Settings, **kwargs: object) -> None:
-        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        super().__init__(
+            *args,
+            allowed_installs=discord.app_commands.AppInstallationType(guild=True, user=False),
+            allowed_contexts=discord.app_commands.AppCommandContext(guild=True, dm_channel=False, private_channel=False),
+            **kwargs,
+        )
         self.settings = settings
         self.start_time = datetime.datetime.now(datetime.UTC)
         self.slash_cache: list[discord.app_commands.AppCommand] = []

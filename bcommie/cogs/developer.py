@@ -21,6 +21,8 @@ class Developer(commands.Cog):
         await ctx.send(T.get("ping", ms=round(self.bot.latency, 2)))
     
     @commands.hybrid_command(name="invite")
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def invite(self, ctx: CommieContext):
         """Shows the bot & support server invite"""
         T = await ctx.get_locale()
@@ -94,6 +96,8 @@ class Developer(commands.Cog):
 
     # This command won't be translated
     @commands.hybrid_command(name="info", aliases=["software", "botinfo"])
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def info(self, ctx: CommieContext):
         """Shows information about the bot, including shard/cluster placement."""
         uptime = datetime.datetime.now(datetime.UTC) - self.bot.start_time
