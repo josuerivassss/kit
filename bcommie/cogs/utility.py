@@ -285,19 +285,27 @@ class Utility(commands.Cog):
     @commands.cooldown(1, 5, commands.BucketType.member)
     @emoji.command(name="info")
     @discord.app_commands.describe(emoji="The emoji to show information about")
-    async def emoji_info(self, ctx: CommieContext, *, emoji: discord.Emoji):
+    async def emoji_info(self, ctx: CommieContext, *, emoji: discord.PartialEmoji):
         """Shows information about an emoji"""
         await ctx.defer()
         T = await ctx.get_locale()
-        
+        if emoji.id is None:
+            raise commands.CommandError(T.get("errors.invalidEmoji"), T.get("errors.invalidEmojiHint"))
+
         embed = discord.Embed(colour=discord.Color.dark_red(), title=emoji.name)
         embed.set_author(name=ctx.guild.name, icon_url=ctx.guild.icon)
         embed.set_image(url=str(emoji.url).replace(".webp", ".png"))
         embed.add_field(name="ID", value=emoji.id, inline=True)
         embed.add_field(name=T.get("info.animated"), value="✅" if emoji.animated else "❌", inline=True)
-        embed.add_field(name="Raw:", value=f"```<{'a' if emoji.animated else ''}:{emoji.name}:{emoji.id}>```", inline=False)
-        embed.add_field(name=T.get("info.created"), value=f"<t:{round(emoji.created_at.timestamp())}:D>", inline=False)
+        embed.add_field(name="Raw:", value=f"```{str(emoji)}```", inline=False)
+        embed.add_field(name=T.get("info.created"), value=f"<t:{round(discord.utils.snowflake_time(emoji.id).timestamp())}:D>", inline=False)
         await ctx.send(embed=embed)
+
+    @emoji_info.error
+    async def emoji_info_error(self, ctx: CommieContext, error):
+        T = await ctx.get_locale()
+        if isinstance(error, commands.BadArgument):
+            raise commands.CommandError(T.get("errors.invalidEmoji"), T.get("errors.invalidEmojiHint"))
     
     @emoji_info.error
     async def emoji_info_error(self, ctx: CommieContext, error):
@@ -314,10 +322,12 @@ class Utility(commands.Cog):
         await ctx.defer()
         T = await ctx.get_locale()
         try:
-            emoji_obj = await commands.EmojiConverter().convert(ctx, emoji)
+            emoji_obj = await commands.PartialEmojiConverter().convert(ctx, emoji)
         except commands.BadArgument:
             raise commands.CommandError(T.get("errors.invalidEmoji"), T.get("errors.invalidEmojiHint"))
-        
+        if emoji_obj.id is None:
+            raise commands.CommandError(T.get("errors.invalidEmoji"), T.get("errors.invalidEmojiHint"))
+
         message = f"**{emoji_obj.name}** (`{emoji_obj.id}`)\n{emoji_obj.url.replace('.webp', '.png')}"
         await ctx.send(message)
     
@@ -326,16 +336,32 @@ class Utility(commands.Cog):
     @commands.bot_has_permissions(manage_emojis=True)
     @commands.has_permissions(manage_emojis=True)
     @emoji.command(name="add")
-    @discord.app_commands.describe(url="The URL of the emoji to add", name="The name of the emoji to add")
-    async def emoji_add(self, ctx: CommieContext, url: str, name: Optional[str] = "unknown"):
-        """Adds an emoji to the server from a URL"""
+    @discord.app_commands.describe(url="The URL (or a pasted emoji) to add", name="The name of the emoji to add")
+    async def emoji_add(self, ctx: CommieContext, url: Optional[str] = None, name: Optional[str] = "unknown"):
+        """Adds an emoji to the server from a URL, a pasted emoji, or an attached image"""
         await ctx.defer()
         T = await ctx.get_locale()
         emojis = await ctx.guild.fetch_emojis()
         if len(emojis) >= ctx.guild.emoji_limit:
             raise commands.CommandError(T.get("errors.emojiLimitReached"), T.get("errors.emojiLimitReachedHint"))
+
+        source_url = url
         try:
-            img_data = await self.bot.toolkit.request(url=url, extract="bytes")
+            pasted = await commands.PartialEmojiConverter().convert(ctx, url) if url else None
+        except commands.BadArgument:
+            pasted = None
+        if pasted is not None and pasted.id is not None:
+            source_url = str(pasted.url)
+            name = pasted.name
+
+        if source_url is None and ctx.message.attachments:
+            source_url = ctx.message.attachments[0].url
+
+        if source_url is None:
+            raise commands.CommandError(T.get("errors.invalidEmoji"), T.get("errors.invalidEmojiHint"))
+
+        try:
+            img_data = await self.bot.toolkit.request(url=source_url, extract="bytes")
             if not img_data:
                 raise commands.CommandError(T.get("errors.invalidEmoji"), T.get("errors.invalidEmojiHint"))
             new_emoji = await ctx.guild.create_custom_emoji(name=name, image=img_data)
