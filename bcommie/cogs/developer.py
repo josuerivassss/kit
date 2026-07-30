@@ -1,14 +1,17 @@
 """Developer/owner-only cog: diagnostics, hot-reload, and the /help entry point."""
-import discord, sys, datetime
+import discord, sys, datetime, io, json
 from discord.ext import commands
 from bcommie.kernel import CommieBot, CommieContext, CommieEmojis
 from bcommie.help import send_help, send_help_cog, send_help_group, send_help_command
 from bcommie.kernel import AnswerType
 from bcommie.ui.paginator import Paginator
+from bcommie.introspection import build_commands_snapshot
 
 _BOT_INVITE_URL = "https://discord.com/oauth2/authorize?client_id=1449864932731392223&permissions=8&scope=bot+applications.commands"
 _DISCORD_INVITE_URL = "https://discord.gg/SY5D4x3RB3"
 _WEB_URL = "https://commie.cofue.space"
+
+_INTROSPECTION_EXCLUDED_COGS = {"Developer", "Events", "Jishaku"}
 
 class Developer(commands.Cog):
     def __init__(self, bot: CommieBot):
@@ -99,7 +102,6 @@ class Developer(commands.Cog):
         uptime = datetime.datetime.now(datetime.UTC) - self.bot.start_time
         await ctx.send(f"Uptime: {uptime} hrs")
 
-    # This command won't be translated
     @commands.hybrid_command(name="info", aliases=["software", "botinfo"])
     @discord.app_commands.allowed_installs(guilds=True, users=True)
     @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
@@ -183,6 +185,15 @@ class Developer(commands.Cog):
         paginator = Paginator(data=pages, ctx=ctx, locale=T, embed=embed, render=render)
         paginator.update_item()
         paginator.message = await ctx.send(embed=embed, view=paginator)
+
+    @commands.is_owner()
+    @commands.command(name="fetchcommands")
+    async def fetch_commands(self, ctx: CommieContext):
+        """Dumps every command's metadata (cooldowns, permissions, slash IDs) as JSON"""
+        snapshot = build_commands_snapshot(self.bot, _INTROSPECTION_EXCLUDED_COGS)
+        payload = json.dumps(snapshot, indent=2, ensure_ascii=False).encode("utf-8")
+        file = discord.File(io.BytesIO(payload), filename=f"commands-{int(discord.utils.utcnow().timestamp())}.json")
+        await ctx.send(content=f"Serialized **{snapshot['command_count']}** top-level commands.", file=file)
 
 async def setup(bot: CommieBot):
     await bot.add_cog(Developer(bot))
