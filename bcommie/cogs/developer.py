@@ -68,9 +68,14 @@ class Developer(commands.Cog):
 
     @commands.cooldown(1, 8, commands.BucketType.member)
     @commands.hybrid_command(name="help")
-    @discord.app_commands.describe(query="The command or cog to get help about")
     async def help_command(self, ctx: CommieContext, *, query: str = None):
-        """Get help about the bot"""
+        """Get help about the bot
+        
+        Parameters
+        ----
+        query: str
+            The command or subcommand to get help about.
+        """
         await ctx.defer()
         T = await ctx.get_locale()
         if not query:

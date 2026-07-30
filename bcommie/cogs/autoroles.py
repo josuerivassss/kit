@@ -22,7 +22,7 @@ class Autoroles(commands.Cog):
     
     @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @commands.hybrid_group(name="autoroles")
+    @commands.hybrid_group(name="autoroles", )
     async def autoroles(self, ctx: CommieContext):
         """Autoroles related commands"""
         if ctx.invoked_subcommand is None:
@@ -31,7 +31,7 @@ class Autoroles(commands.Cog):
     
     @commands.has_guild_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
-    @autoroles.command(name="add")
+    @autoroles.command(name="add", )
     @discord.app_commands.describe(usertype="The type of user to assign the role to")
     async def autoroles_add(self, ctx: CommieContext, role: discord.Role, usertype: Literal["bots", "humans"] = "humans"):
         """Adds a role to the autoroles"""
