@@ -24,11 +24,27 @@ class Interpreter:
 
     async def render(self, nodes: list[Node], ctx: Any) -> RenderResult:
         """Evaluate every top-level node, appending to `self.result.content`."""
-        for node in nodes:
+        i = 0
+        while i < len(nodes):
+            node = nodes[i]
             try:
-                self.result.content += await self._eval(node, ctx, 0)
+                value = await self._eval(node, ctx, 0)
             except Exception:  # noqa: BLE001 - templates must never crash the caller
-                self.result.content += node.raw
+                value = node.raw
+            # A placeholder that occupies an entire line by itself and resolves
+            # to nothing (e.g. {embed.title:...}) shouldn't leave a blank line
+            # behind -- absorb the following line break along with it.
+            if (
+                isinstance(node, PlaceholderNode)
+                and value == ""
+                and (self.result.content == "" or self.result.content.endswith("\n"))
+                and i + 1 < len(nodes)
+                and isinstance(nodes[i + 1], TextNode)
+                and nodes[i + 1].value.startswith("\n")
+            ):
+                nodes[i + 1] = TextNode(nodes[i + 1].value[1:])
+            self.result.content += value
+            i += 1
         return self.result
 
     async def _eval(self, node: Node, ctx: Any, depth: int) -> str:

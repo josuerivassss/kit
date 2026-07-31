@@ -156,8 +156,8 @@ class Starboard(commands.Cog):
     @commands.cooldown(1, 15, commands.BucketType.guild)
     @commands.has_permissions(manage_guild=True)
     @starboard.command(name="threshold")
-    @discord.app_commands.describe(amount="Minimum number of stars needed (1-500)")
-    async def starboard_threshold(self, ctx: CommieContext, amount: discord.app_commands.Range[int, 1, 500]):
+    @discord.app_commands.describe(amount="Minimum number of stars needed (2-250)")
+    async def starboard_threshold(self, ctx: CommieContext, amount: commands.Range[int, 2, 250]):
         """Sets the star threshold"""
         await self._update_config(ctx.guild.id, "threshold", amount)
         T = await ctx.get_locale()

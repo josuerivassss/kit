@@ -37,8 +37,8 @@ class Events(commands.Cog):
         elif isinstance(error, commands.RoleNotFound):
             return await ctx.answer(f"{T.get('errors.roleNotFound', role=error.argument)}", hint=T.get("errors.roleNotFoundHint"), type="error")
         elif isinstance(error, commands.BadArgument):
-            return await ctx.answer(f"{T.get('errors.badArgument')}", hint=T.get("errors.badArgumentHint", argument=error.param.name if hasattr(error, 'param') else 'unknown'), type="error")
-        elif isinstance(error, commands.CommandNotFound):
+            argument_name = ctx.current_parameter.name if ctx.current_parameter else "unknown"
+            return await ctx.answer(f"{T.get('errors.badArgument')}", hint=T.get("errors.badArgumentHint", argument=argument_name), type="error")
             return
         elif isinstance(error, commands.MissingPermissions):
             missing = ", ".join(error.missing_permissions)
