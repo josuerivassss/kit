@@ -48,7 +48,7 @@ class Tags(commands.Cog):
     
     @commands.guild_only()
     @commands.cooldown(1, 2.5, commands.BucketType.member)
-    @tags.command(name="view")
+    @tags.command(name="view", extras={"supports_placeholders": True})
     @discord.app_commands.describe(tag_name="The name of the tag to view")
     async def tag_view(self, ctx: CommieContext, *, tag_name: str):
         """Views a tag"""

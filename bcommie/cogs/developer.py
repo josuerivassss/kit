@@ -62,7 +62,7 @@ class Developer(commands.Cog):
         await ctx.answer(f"**{name}** successfully reloaded!", bold=False, view=view, type=AnswerType.Ok)
     
     @commands.cooldown(1, 8, commands.BucketType.user)
-    @commands.hybrid_command(name="interpolate")
+    @commands.hybrid_command(name="interpolate", extras={"supports_placeholders": True})
     @commands.is_owner()
     @discord.app_commands.describe(text="The text to interpolate with locale placeholders")
     async def interpolate(self, ctx: CommieContext, *, text: str):

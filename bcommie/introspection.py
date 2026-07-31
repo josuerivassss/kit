@@ -118,6 +118,7 @@ def _serialize_command(
         # one per subcommand; mentions use </parent child:parent_id>.
         "id_slash": str(app_command_id) if app_command_id else None,
         "options": _serialize_options(app_options),
+        "supports_placeholders": bool(command.extras.get("supports_placeholders")),
         "children": [],
     }
     if isinstance(command, commands.HybridGroup):

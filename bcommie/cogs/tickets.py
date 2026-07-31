@@ -215,7 +215,7 @@ class Tickets(commands.Cog):
             await ctx.send(T.get("errors.ticketRoleTooLargeWarning", count=len(role.members)), delete_after=20)
 
     @commands.has_permissions(manage_guild=True)
-    @ticket.command(name="message")
+    @ticket.command(name="message", extras={"supports_placeholders": True})
     @discord.app_commands.describe(text="Message shown when a ticket opens. Supports {user.mention}, {guild.name}, etc.")
     async def ticket_message(self, ctx: CommieContext, *, text: str):
         """Sets the welcome message posted inside new tickets"""

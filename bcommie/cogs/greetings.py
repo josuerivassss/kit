@@ -68,7 +68,7 @@ class Greetings(commands.Cog):
     
     @commands.cooldown(1, 30, commands.BucketType.guild)
     @commands.has_permissions(manage_guild=True)
-    @welcome.command(name="message")
+    @welcome.command(name="message", extras={"supports_placeholders": True})
     async def welcome_message(self, ctx: CommieContext, *, message: str):
         """Sets the welcome message. Use {user} to mention the new member."""
         await ctx.defer()
@@ -82,7 +82,7 @@ class Greetings(commands.Cog):
     
     @commands.cooldown(1, 15, commands.BucketType.guild)
     @commands.has_permissions(manage_guild=True)
-    @welcome.command(name="preview")
+    @welcome.command(name="preview", extras={"supports_placeholders": True})
     async def welcome_preview(self, ctx: CommieContext):
         """Previews the welcome message with your user as the new member."""
         guild_data = await self.bot.db.get(table="guilds", id=ctx.guild.id)
@@ -134,7 +134,7 @@ class Greetings(commands.Cog):
     @commands.cooldown(1, 30, commands.BucketType.guild)
     @commands.has_permissions(manage_guild=True)
     @discord.app_commands.describe(message="The message to send when a member leaves.")
-    @leave.command(name="message")
+    @leave.command(name="message", extras={"supports_placeholders": True})
     async def leave_message(self, ctx: CommieContext, *, message: str):
         """Sets the leave message. Use {user} to mention the member who left."""
         await ctx.defer()
@@ -148,7 +148,7 @@ class Greetings(commands.Cog):
 
     @commands.cooldown(1, 15, commands.BucketType.guild)
     @commands.has_permissions(manage_guild=True)
-    @leave.command(name="preview")
+    @leave.command(name="preview", extras={"supports_placeholders": True})
     async def leave_preview(self, ctx: CommieContext):
         """Previews the leave message with your user as the member who left."""
         # T = await ctx.get_locale()
