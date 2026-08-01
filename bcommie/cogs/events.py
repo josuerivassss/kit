@@ -23,7 +23,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: CommieContext, error: commands.CommandError):
         T = await ctx.get_locale()
-
+        if isinstance(error, commands.CommandNotFound):
+            return # silently ignore unknown commands
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.answer(f"{T.get('errors.onCooldown')}", hint=T.get("errors.onCooldownHint", time=round(error.retry_after, 2)), type="error", deleteAfter=5)
         elif isinstance(error, commands.MissingRequiredArgument):

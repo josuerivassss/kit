@@ -439,14 +439,22 @@ class Utility(commands.Cog):
         """Shows information about a color given its hex code"""
         await ctx.defer()
         T = await ctx.get_locale()
-        if hex_code.startswith("#"):
-            hex_code = hex_code[1:]
-        try:
-            rgb = tuple(int(hex_code[i:i+2], 16) for i in (0, 2, 4))
-        except Exception:
+
+        # Validate against the same 3/6-digit hex pattern used elsewhere in the toolkit,
+        # instead of trusting the raw length the user typed.
+        if not self.bot.toolkit.is_hex(hex_code):
             raise commands.CommandError(T.get("errors.notInfo"), T.get("errors.notInfoHint"))
-        
-        r, g, b = rgb
+
+        hex_code = hex_code.lstrip("#")
+        if len(hex_code) == 3:
+            hex_code = "".join(c * 2 for c in hex_code)  # expand shorthand (e.g. "0af" -> "00aaff")
+        hex_code = hex_code.upper()
+
+        # rgb and int_value now both derive from the same normalized 6-digit string,
+        # guaranteeing int_value never exceeds Discord's 0xFFFFFF embed color limit.
+        r, g, b = (int(hex_code[i:i + 2], 16) for i in (0, 2, 4))
+        rgb = (r, g, b)
+
         c = 1 - r / 255
         m = 1 - g / 255
         y = 1 - b / 255
@@ -461,14 +469,14 @@ class Utility(commands.Cog):
 
         int_value = int(hex_code, 16)
 
-        embed = discord.Embed(color=int_value, title=f"#{hex_code.upper()}")
+        embed = discord.Embed(color=int_value, title=f"#{hex_code}")
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.display_avatar)
-        embed.add_field(name="HEX", value=f"#{hex_code.upper()}", inline=True)
+        embed.add_field(name="HEX", value=f"#{hex_code}", inline=True)
         embed.add_field(name="RGB", value=f"rgb({r}, {g}, {b})", inline=True)
         embed.add_field(name="CMYK", value=f"cmyk({c}%, {m}%, {y}%, {k}%)", inline=True)
         embed.add_field(name="INT", value=str(int_value), inline=True)
         embed.add_field(name="HSL", value=f"hsl({h}, {s}%, {l}%)", inline=True)
-        embed.set_image(url=f"https://singlecolorimage.com/get/{hex_code.upper()}/400x200")
+        embed.set_image(url=f"https://singlecolorimage.com/get/{hex_code}/400x200")
         await ctx.send(embed=embed)
     
     @commands.cooldown(1, 8, commands.BucketType.user)
