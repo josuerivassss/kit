@@ -48,6 +48,9 @@ class Settings(BaseSettings):
     dashboard_port: int = Field(default=8080, alias="DASHBOARD_PORT")
     dashboard_jwt_secret: str = Field(default="change-me", alias="DASHBOARD_JWT_SECRET")
 
+    # --- Error reporting ---------------------------------------------------
+    error_webhook_url: str = Field(default="", alias="ERROR_WEBHOOK_URL")
+
     @field_validator("log_format")
     @classmethod
     def _validate_log_format(cls, value: str) -> str:

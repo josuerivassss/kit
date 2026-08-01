@@ -23,6 +23,7 @@ from bcommie.kernel.context import CommieContext
 from bcommie.logging_setup import get_logger
 from bcommie.managers.language import LanguageManager
 from bcommie.security import SlidingWindowRateLimiter
+from bcommie.error_reporting import ErrorReporter
 from bcommie.toolkit import ToolKit
 
 logger = get_logger(__name__)
@@ -43,6 +44,7 @@ class CommieBot(commands.AutoShardedBot):
         self.slash_cache: list[discord.app_commands.AppCommand] = []
 
         self.toolkit = ToolKit(self)
+        self.errors = ErrorReporter(self, settings.error_webhook_url)
         self.db = MongoDatabaseManager(uri=settings.mongo_uri, db_name=settings.mongo_db_name)
         self.sql = PostgresDatabaseManager(
             dsn=settings.postgres_dsn, min_size=settings.postgres_pool_min, max_size=settings.postgres_pool_max
@@ -58,6 +60,7 @@ class CommieBot(commands.AutoShardedBot):
     async def setup_hook(self) -> None:
         """discord.py lifecycle hook: run once before the first gateway connection."""
         await self.toolkit.setup()
+        self.errors.start()
         await self.load_extension("jishaku")
 
         for module_info in iter_modules(cogs_package.__path__):
@@ -79,6 +82,7 @@ class CommieBot(commands.AutoShardedBot):
     async def close(self) -> None:
         """discord.py lifecycle hook: run once on shutdown. Closes every resource
         symmetrically with what setup_hook() opened."""
+        await self.errors.stop()
         await self.toolkit.close()
         await self.sql.close()
         await self.db.close()

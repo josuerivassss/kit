@@ -3,7 +3,7 @@
 Every uncaught command error funnels through `on_command_error`, ensuring a
 single, consistent error-reply format regardless of which cog raised it.
 """
-import discord
+import discord, sys
 from discord.ext import commands
 from bcommie.kernel import CommieBot, CommieContext
 from bcommie.logging_setup import get_logger
@@ -64,11 +64,22 @@ class Events(commands.Cog):
                 guild_id=ctx.guild.id if ctx.guild else None,
                 exc_info=error,
             )
+            self.bot.errors.report(
+                f"Unhandled error: {ctx.command.qualified_name if ctx.command else 'unknown'}",
+                error,
+                guild=f"{ctx.guild.name} ({ctx.guild.id})" if ctx.guild else "DM",
+                channel=str(ctx.channel.id) if ctx.channel else None,
+                author=f"{ctx.author} ({ctx.author.id})",
+                message=ctx.message.jump_url if ctx.message else None,
+            )
 
     @commands.Cog.listener()
     async def on_error(self, event_method: str, *args, **kwargs):
         """Emitted when an error occurs outside of command invocation."""
         logger.exception("unhandled_gateway_error", event=event_method)
+        error = sys.exc_info()[1]
+        if error is not None:
+            self.bot.errors.report(f"Unhandled gateway error: {event_method}", error, event=event_method)
 
     # -- reminder bookkeeping on guild/channel removal -----------------------
 
