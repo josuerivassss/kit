@@ -71,7 +71,7 @@ def build_bot() -> CommieBot:
         intents=_build_intents(),
         help_command=None,
         tree_cls=CommieTreeClass,
-        activity=discord.Game(name="hey commie"),
+        activity=discord.Game(name="commie.cofue.space"),
         shard_count=settings.shard_count or None,
         shard_ids=settings.shard_id_list,
         settings=settings,
