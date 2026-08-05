@@ -34,7 +34,7 @@ class Configuration(commands.Cog):
         if len(prefix) > 15:
             raise commands.CommandError(T.get("errors.prefixTooLong", max=15))
         if prefix.lower() == "default" or prefix == "reset":
-            # Remove from database to save space
+            # Remove from database to save space cuz yeah
             await self.bot.db.delete(table="guilds", id=ctx.guild.id, field="prefix")
             await ctx.answer(T.get("success.prefixReset", prefix=ctx.clean_prefix), type="success")
         else:

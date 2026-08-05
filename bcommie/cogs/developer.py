@@ -115,7 +115,7 @@ class Developer(commands.Cog):
         embed.add_field(name="Servers", value=len(ctx.bot.guilds), inline=True)
         embed.add_field(name="Users", value=len(ctx.bot.users), inline=True)
         embed.add_field(name="Commands", value=len(ctx.bot.commands), inline=True)
-        embed.add_field(name="Uptime", value=f"{uptime}", inline=True)
+        embed.add_field(name="Uptime", value=f"{uptime}", inline=True) # Pending fix
         embed.add_field(name="Latency", value=f"{round(self.bot.latency * 1000, 2)} ms", inline=True)
         embed.add_field(name="Shard", value=f"{shard_id} / {self.bot.shard_count or 1}", inline=True)
         embed.add_field(name="Cluster", value=str(self.bot.settings.cluster_id), inline=True)

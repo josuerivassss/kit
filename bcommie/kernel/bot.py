@@ -39,12 +39,12 @@ class CommieBot(commands.AutoShardedBot):
             allowed_contexts=discord.app_commands.AppCommandContext(guild=True, dm_channel=False, private_channel=False),
             **kwargs,
         )
-        self.settings = settings
+        self.settings = settings # store settings for later use
         self.start_time = datetime.datetime.now(datetime.UTC)
         self.slash_cache: list[discord.app_commands.AppCommand] = []
 
         self.toolkit = ToolKit(self)
-        self.errors = ErrorReporter(self, settings.error_webhook_url)
+        self.errors = ErrorReporter(self, settings.error_webhook_url) # Webhook for error reporting (in discord.)
         self.db = MongoDatabaseManager(uri=settings.mongo_uri, db_name=settings.mongo_db_name)
         self.sql = PostgresDatabaseManager(
             dsn=settings.postgres_dsn, min_size=settings.postgres_pool_min, max_size=settings.postgres_pool_max

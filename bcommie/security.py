@@ -45,6 +45,7 @@ class SlidingWindowRateLimiter:
         return len(hits) <= self.max_calls
 
 
+# Experimental decorator for applying the bot's shared rate limiter to a command.
 def rate_limited(limiter_attr: str = "rate_limiter") -> Callable[[T], T]:
     """Decorator applying the bot's shared rate limiter to a command.
 

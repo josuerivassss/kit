@@ -1,4 +1,5 @@
 """Process entrypoint. `python -m bcommie.main` or the `bcommie` console script.
+It spins up a single CommieBot instance, which may be sharded across multiple.
 
 Scaling to multiple processes
 ------------------------------
@@ -38,6 +39,7 @@ os.environ.setdefault("JISHAKU_HIDE", "True")
 
 logger = get_logger(__name__)
 
+BOT_DOMAIN = "commie.cofue.space"  # used in bot activity and help command footer
 
 def _build_intents() -> discord.Intents:
     intents = discord.Intents.default()
@@ -53,7 +55,7 @@ async def _get_prefix(bot: CommieBot, message: discord.Message) -> list[str] | s
         return commands.when_mentioned(bot, message)
     prefix = await bot.db.get(table="guilds", id=message.guild.id, path="prefix")
     if prefix is None:
-        return commands.when_mentioned_or("hey commie", "commie!", "c!", "c?")(bot, message)
+        return commands.when_mentioned_or("commie!", "c!", "c?")(bot, message)
     return commands.when_mentioned_or(prefix)(bot, message)
 
 
@@ -71,7 +73,7 @@ def build_bot() -> CommieBot:
         intents=_build_intents(),
         help_command=None,
         tree_cls=CommieTreeClass,
-        activity=discord.Game(name="commie.cofue.space"),
+        activity=discord.Game(name=BOT_DOMAIN),
         shard_count=settings.shard_count or None,
         shard_ids=settings.shard_id_list,
         settings=settings,
@@ -88,7 +90,7 @@ async def _amain() -> None:
 def run() -> None:
     """Synchronous entrypoint used by the `bcommie` console script."""
     try:
-        asyncio.run(_amain())
+        asyncio.run(_amain()) # type: ignore[arg-type]
     except KeyboardInterrupt:
         logger.info("shutdown_requested")
 

@@ -104,7 +104,7 @@ class Autoroles(commands.Cog):
             role = member.guild.get_role(role_id)
             if role:
                 try:
-                    await member.add_roles(role, reason="Autorole assigned on member join")
+                    await member.add_roles(role, reason="Commie: Autorole assigned on member join")
                 except discord.Forbidden:
                     pass
                 except discord.HTTPException:

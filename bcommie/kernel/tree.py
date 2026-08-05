@@ -7,7 +7,7 @@ from bcommie.logging_setup import get_logger
 
 logger = get_logger(__name__)
 
-
+# Used for HelpCommand, which needs to be able to sync commands
 class CommieTreeClass(discord.app_commands.CommandTree):
     """Slash-command tree that disables DM usage for every command before syncing."""
 

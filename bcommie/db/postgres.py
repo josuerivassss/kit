@@ -318,7 +318,7 @@ class PostgresDatabaseManager:
             logger.exception("postgres_bulk_delete_failed", table=table)
             return 0
 
-    # -- escape hatch for hardcoded, trusted queries -----------------------
+    # -- escape hatch for hardcoded, trusted queries, be careful! -----------------------
 
     async def execute(self, query: str, *args: Any) -> str | None:
         """Run a trusted, hardcoded, non-SELECT statement. Bypasses table whitelisting."""

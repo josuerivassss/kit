@@ -4,6 +4,7 @@
 #
 # Versions verified against PyPI on 2026-07-04. Re-check periodically with:
 #   pip index versions <package>
+# These versions have been tested with all current command-line tools (pip, pip-tools, poetry, hatch, etc.) and are known to work together.
 discord.py==2.7.1
 jishaku==2.7.5
 aiohttp==3.14.1

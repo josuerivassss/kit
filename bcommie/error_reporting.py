@@ -143,7 +143,7 @@ class ErrorReporter:
         embed = discord.Embed(
             title=report.title[:256],
             description=f"```py\n{tb}\n```",
-            colour=discord.Colour.red(),
+            colour=discord.Colour.dark_red(),
             timestamp=discord.utils.utcnow(),
         )
         for key, value in report.context.items():

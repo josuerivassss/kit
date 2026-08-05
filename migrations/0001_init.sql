@@ -43,7 +43,4 @@ CREATE TABLE IF NOT EXISTS user_timezones (
 
 COMMIT;
 
--- Recommended (run manually by a DBA, not by the application):
---   CREATE ROLE bcommie_app LOGIN PASSWORD '...';
---   GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO bcommie_app;
---   -- The application connects as bcommie_app, never as a superuser (least privilege).
+-- Recomendation: Run this in SQL Editor.

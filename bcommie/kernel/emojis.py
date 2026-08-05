@@ -1,7 +1,7 @@
 """Custom Discord emoji IDs used across command responses."""
 from enum import StrEnum
 
-
+# Pending task: Migrate all of these to bot's emojis, not server emojis.
 class CommieEmojis(StrEnum):
     Heart = "<:C_Heart:1519911360371232912>"
     Crying = "<:C_Cry:1519914094113718302>"
