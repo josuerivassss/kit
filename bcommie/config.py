@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     dashboard_port: int = Field(default=8080, alias="DASHBOARD_PORT")
     dashboard_jwt_secret: str = Field(default="change-me", alias="DASHBOARD_JWT_SECRET")
 
+    # Service Commie
+    api_base_url: str = Field(default="http://localhost:3000", alias="API_BASE_URL")
+    api_admin_secret: str = Field(default="", alias="API_ADMIN_SECRET")
+
     # --- Error reporting ---------------------------------------------------
     error_webhook_url: str = Field(default="", alias="ERROR_WEBHOOK_URL")
 

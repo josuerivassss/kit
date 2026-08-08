@@ -1,5 +1,7 @@
-"""Developer/owner-only cog: diagnostics, hot-reload, and the /help entry point."""
-import discord, sys, datetime, io, json
+"""Developer/owner-only cog: diagnostics, hot-reload, API key management, and the /help entry point."""
+import discord, sys, datetime, io, json, secrets, hashlib
+from datetime import timedelta, timezone
+from typing import Literal
 from discord.ext import commands
 from bcommie.kernel import CommieBot, CommieContext, CommieEmojis
 from bcommie.help import send_help, send_help_cog, send_help_group, send_help_command
@@ -12,6 +14,25 @@ _DISCORD_INVITE_URL = "https://discord.gg/SY5D4x3RB3"
 _WEB_URL = "https://commie.cofue.space"
 
 _INTROSPECTION_EXCLUDED_COGS = {"Developer", "Events", "Jishaku"}
+
+_PARTNER_MIN_GUILDS = 2
+_PARTNER_MIN_HUMAN_MEMBERS = 5
+
+
+def _is_key_hash(value: str) -> bool:
+    return len(value) == 64 and all(c in "0123456789abcdef" for c in value.lower())
+
+
+def _qualifying_guilds(bot: CommieBot, user_id: int) -> list[discord.Guild]:
+    qualifying = []
+    for g in bot.guilds:
+        if g.owner_id != user_id:
+            continue
+        human_count = sum(1 for m in g.members if not m.bot)
+        if human_count > _PARTNER_MIN_HUMAN_MEMBERS:
+            qualifying.append(g)
+    return qualifying
+
 
 class Developer(commands.Cog):
     def __init__(self, bot: CommieBot):
@@ -115,7 +136,7 @@ class Developer(commands.Cog):
         embed.add_field(name="Servers", value=len(ctx.bot.guilds), inline=True)
         embed.add_field(name="Users", value=len(ctx.bot.users), inline=True)
         embed.add_field(name="Commands", value=len(ctx.bot.commands), inline=True)
-        embed.add_field(name="Uptime", value=f"{uptime}", inline=True) # Pending fix
+        embed.add_field(name="Uptime", value=f"{uptime}", inline=True)
         embed.add_field(name="Latency", value=f"{round(self.bot.latency * 1000, 2)} ms", inline=True)
         embed.add_field(name="Shard", value=f"{shard_id} / {self.bot.shard_count or 1}", inline=True)
         embed.add_field(name="Cluster", value=str(self.bot.settings.cluster_id), inline=True)
@@ -185,6 +206,184 @@ class Developer(commands.Cog):
         paginator = Paginator(data=pages, ctx=ctx, locale=T, embed=embed, render=render)
         paginator.update_item()
         paginator.message = await ctx.send(embed=embed, view=paginator)
+
+    def _api_keys(self):
+        return self.bot.db.db["api_keys"]
+
+    async def _refresh_api_cache(self):
+        await self.bot.toolkit.request(
+            method="POST",
+            url=f"{self.bot.settings.api_base_url}/admin/refresh-keys",
+            headers={"X-Internal-Secret": self.bot.settings.api_admin_secret},
+        )
+
+    @commands.is_owner()
+    @commands.hybrid_group(name="api")
+    async def api(self, ctx: CommieContext):
+        """Manages API key access (owner-only)"""
+        if ctx.invoked_subcommand is None:
+            cmd = self.bot.get_command("api")
+            await send_help_group(ctx, cmd, self.bot.slash_cache, await ctx.get_locale())
+
+    @commands.is_owner()
+    @api.command(name="grant")
+    @discord.app_commands.describe(user="Target user", plan="basic | pro | partner", duration_hours="Pro validity in hours (default 48)")
+    async def api_grant(self, ctx: CommieContext, user: discord.User, plan: Literal["basic", "pro", "partner"], duration_hours: int = 48):
+        """Grants or updates an API key for a user"""
+        await ctx.defer()
+        collection = self._api_keys()
+        raw_key = secrets.token_urlsafe(32)
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+        expires_at = datetime.datetime.now(timezone.utc) + timedelta(hours=duration_hours) if plan == "pro" else None
+        data = {"key_hash": key_hash, "discord_id": str(user.id), "plan": plan, "banned": False, "expires_at": expires_at}
+        existing = await collection.find_one({"discord_id": str(user.id)})
+        if existing:
+            await collection.update_one({"_id": existing["_id"]}, {"$set": data})
+        else:
+            await collection.insert_one(data)
+        await self._refresh_api_cache()
+        try:
+            await user.send(f"Your new API key: `{raw_key}`\nPlan: **{plan}**\nKeep it secret, it won't be shown again.")
+            delivered = True
+        except discord.Forbidden:
+            delivered = False
+        msg = f"Granted **{plan}** plan to **{user}**."
+        if not delivered:
+            msg += " Could not DM the key (DMs closed) -- use `/api regenerate` once they open DMs."
+        await ctx.answer(msg, type="success")
+
+    @commands.is_owner()
+    @api.command(name="revoke")
+    @discord.app_commands.describe(target="User mention/ID or the key's hash")
+    async def api_revoke(self, ctx: CommieContext, target: str):
+        """Revokes an API key by user or key hash"""
+        await ctx.defer()
+        target = target.strip("<@!>")
+        query = {"key_hash": target} if _is_key_hash(target) else {"discord_id": target}
+        result = await self._api_keys().delete_one(query)
+        if result.deleted_count == 0:
+            raise commands.CommandError("No matching API key found.")
+        await self._refresh_api_cache()
+        await ctx.answer(f"Revoked API key for `{target}`.", type="success")
+
+    @commands.is_owner()
+    @api.command(name="ban")
+    @discord.app_commands.describe(user="User to ban from API access")
+    async def api_ban(self, ctx: CommieContext, user: discord.User):
+        """Bans a user's API key without deleting it"""
+        await ctx.defer()
+        result = await self._api_keys().update_one({"discord_id": str(user.id)}, {"$set": {"banned": True}})
+        if result.matched_count == 0:
+            raise commands.CommandError(f"{user} has no API key.")
+        await self._refresh_api_cache()
+        await ctx.answer(f"Banned API access for **{user}**.", type="success")
+
+    @commands.is_owner()
+    @api.command(name="check")
+    @discord.app_commands.describe(user="User to check for Partner eligibility")
+    async def api_check(self, ctx: CommieContext, user: discord.User):
+        """Checks if a user currently qualifies for the Partner plan"""
+        await ctx.defer()
+        qualifying = _qualifying_guilds(self.bot, user.id)
+        eligible = len(qualifying) >= _PARTNER_MIN_GUILDS
+        embed = discord.Embed(title=f"Partner eligibility: {user}", colour=discord.Color.green() if eligible else discord.Color.red())
+        embed.add_field(name="Qualifying servers", value=str(len(qualifying)))
+        embed.add_field(name="Required", value=f"{_PARTNER_MIN_GUILDS} servers, >{_PARTNER_MIN_HUMAN_MEMBERS} humans each")
+        embed.add_field(name="Eligible", value="✅" if eligible else "❌")
+        if qualifying:
+            embed.add_field(name="Servers", value="\n".join(g.name for g in qualifying[:10]), inline=False)
+        await ctx.send(embed=embed)
+
+    @commands.is_owner()
+    @api.command(name="checkall")
+    @discord.app_commands.describe(enforce="Downgrade ineligible partners to basic instead of just reporting")
+    async def api_checkall(self, ctx: CommieContext, enforce: bool = False):
+        """Audits every Partner key against current ownership/member requirements"""
+        await ctx.defer()
+        collection = self._api_keys()
+        partners = await collection.find({"plan": "partner"}).to_list(length=None)
+        ineligible = []
+        for doc in partners:
+            qualifying = _qualifying_guilds(self.bot, int(doc["discord_id"]))
+            if len(qualifying) < _PARTNER_MIN_GUILDS:
+                ineligible.append((doc, len(qualifying)))
+        if enforce and ineligible:
+            for doc, _count in ineligible:
+                await collection.update_one({"_id": doc["_id"]}, {"$set": {"plan": "basic"}})
+            await self._refresh_api_cache()
+        lines = [f"<@{d['discord_id']}> ({count}/{_PARTNER_MIN_GUILDS})" for d, count in ineligible] or ["None"]
+        title = "Partner audit (enforced)" if enforce else "Partner audit (report only)"
+        embed = discord.Embed(title=title, description="\n".join(lines), colour=discord.Color.dark_red())
+        embed.set_footer(text=f"{len(ineligible)} ineligible out of {len(partners)} partners")
+        await ctx.send(embed=embed)
+
+    @commands.is_owner()
+    @api.command(name="info")
+    @discord.app_commands.describe(target="User mention/ID or the key's hash")
+    async def api_info(self, ctx: CommieContext, target: str):
+        """Shows raw API key data for a user or key hash"""
+        await ctx.defer()
+        target = target.strip("<@!>")
+        query = {"key_hash": target} if _is_key_hash(target) else {"discord_id": target}
+        doc = await self._api_keys().find_one(query)
+        if not doc:
+            raise commands.CommandError("No matching API key found.")
+        embed = discord.Embed(title="API Key Info", colour=discord.Color.dark_red())
+        embed.add_field(name="Discord ID", value=doc["discord_id"])
+        embed.add_field(name="Plan", value=doc["plan"])
+        embed.add_field(name="Banned", value="✅" if doc["banned"] else "❌")
+        embed.add_field(name="Expires", value=doc["expires_at"].strftime("%Y-%m-%d %H:%M UTC") if doc.get("expires_at") else "Never")
+        await ctx.send(embed=embed)
+
+    @commands.is_owner()
+    @api.command(name="usage")
+    @discord.app_commands.describe(target="User mention/ID or the key's hash")
+    async def api_usage(self, ctx: CommieContext, target: str):
+        """Shows today's request count for a key, read live from the API"""
+        await ctx.defer()
+        target = target.strip("<@!>")
+        query = {"key_hash": target} if _is_key_hash(target) else {"discord_id": target}
+        doc = await self._api_keys().find_one(query)
+        if not doc:
+            raise commands.CommandError("No matching API key found.")
+        response = await self.bot.toolkit.request(
+            method="GET",
+            url=f"{self.bot.settings.api_base_url}/admin/usage/{doc['key_hash']}",
+            headers={"X-Internal-Secret": self.bot.settings.api_admin_secret},
+        )
+        if not response:
+            raise commands.CommandError("Could not reach the API server.")
+        usage_data = response.get("data", response)
+        limit = usage_data.get("limit")
+        embed = discord.Embed(title="API Key Usage", colour=discord.Color.dark_red())
+        embed.add_field(name="Discord ID", value=usage_data.get("discord_id"))
+        embed.add_field(name="Plan", value=usage_data.get("plan"))
+        embed.add_field(name="Used today", value=f"{usage_data.get('used')}/{limit if limit is not None else '∞'}")
+        await ctx.send(embed=embed)
+
+    @commands.is_owner()
+    @api.command(name="regenerate")
+    @discord.app_commands.describe(user="User whose key will be regenerated")
+    async def api_regenerate(self, ctx: CommieContext, user: discord.User):
+        """Issues a new key for a user, invalidating the previous one"""
+        await ctx.defer()
+        collection = self._api_keys()
+        existing = await collection.find_one({"discord_id": str(user.id)})
+        if not existing:
+            raise commands.CommandError(f"{user} has no API key.")
+        raw_key = secrets.token_urlsafe(32)
+        key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+        await collection.update_one({"_id": existing["_id"]}, {"$set": {"key_hash": key_hash}})
+        await self._refresh_api_cache()
+        try:
+            await user.send(f"Your regenerated API key: `{raw_key}`\nThe previous key stopped working immediately.")
+            delivered = True
+        except discord.Forbidden:
+            delivered = False
+        msg = f"Regenerated API key for **{user}**."
+        if not delivered:
+            msg += " Could not DM the new key (DMs closed)."
+        await ctx.answer(msg, type="success")
 
     @commands.is_owner()
     @commands.command(name="fetchcommands")
