@@ -228,8 +228,8 @@ class Developer(commands.Cog):
 
     @commands.is_owner()
     @api.command(name="grant")
-    @discord.app_commands.describe(user="Target user", plan="basic | pro | partner | tester", duration_hours="Pro validity in hours (default 48)")
-    async def api_grant(self, ctx: CommieContext, user: discord.User, plan: Literal["basic", "pro", "partner", "tester"], duration_hours: int = 48):
+    @discord.app_commands.describe(user="Target user", plan="basic | pro | partner | test", duration_hours="Pro validity in hours (default 48)")
+    async def api_grant(self, ctx: CommieContext, user: discord.User, plan: Literal["basic", "pro", "partner", "test"], duration_hours: int = 48):
         """Grants or updates an API key for a user"""
         await ctx.defer()
         collection = self._api_keys()
