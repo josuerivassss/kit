@@ -7,6 +7,7 @@ import discord, sys
 from discord.ext import commands
 from bcommie.kernel import CommieBot, CommieContext
 from bcommie.logging_setup import get_logger
+from bcommie.cogs.configuration import CommandDisabledError
 
 logger = get_logger(__name__)
 
@@ -23,7 +24,11 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: CommieContext, error: commands.CommandError):
         T = await ctx.get_locale()
-        if isinstance(error, commands.CommandNotFound):
+        if isinstance(error, CommandDisabledError):
+            if ctx.interaction is not None and not ctx.interaction.response.is_done():
+                await ctx.interaction.response.send_message("\u200b", ephemeral=True)
+            return  # prefix invocations: fully silent, no reply at all
+        elif isinstance(error, commands.CommandNotFound):
             return # silently ignore unknown commands
         if isinstance(error, commands.CommandOnCooldown):
             return await ctx.answer(f"{T.get('errors.onCooldown')}", hint=T.get("errors.onCooldownHint", time=round(error.retry_after, 2)), type="error", deleteAfter=5)

@@ -20,6 +20,7 @@ from discord.ext import commands
 
 from bcommie import __version__
 from bcommie.help import parse_params
+from bcommie.command_registry import COG_IDS, COMMAND_IDS
 
 _PERMISSION_LABELS: dict[str, str] = {
     "administrator": "Administrator",
@@ -114,11 +115,11 @@ def _serialize_command(
         "owner_only": checks["owner_only"],
         "permissions": {"user": checks["user"], "bot": checks["bot"]},
         "usage": {"prefix": _prefix_usage(command)},
-        # Subcommands share the parent's Discord ID -- Discord doesn't assign
-        # one per subcommand; mentions use </parent child:parent_id>.
         "id_slash": str(app_command_id) if app_command_id else None,
         "options": _serialize_options(app_options),
         "supports_placeholders": bool(command.extras.get("supports_placeholders")),
+        "protected": bool(command.extras.get("protected")),
+        "toggle_id": COMMAND_IDS.get(command.qualified_name),
         "children": [],
     }
     if isinstance(command, commands.HybridGroup):
@@ -142,6 +143,7 @@ def build_commands_snapshot(bot: commands.Bot, excluded_cogs: set[str]) -> dict[
         app_command = discord.utils.get(bot.slash_cache, name=command.name)
         node = _serialize_command(command, app_command.id if app_command else None, getattr(app_command, "options", None))
         node["category"] = cog_name
+        node["category_id"] = COG_IDS.get(cog_name)
         commands_out.append(node)
     return {
         "generated_at": discord.utils.utcnow().isoformat(),
