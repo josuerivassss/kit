@@ -111,8 +111,13 @@ class Configuration(commands.Cog):
         T = await ctx.get_locale()
         resolved = _resolve_target(self.bot, target)
         if resolved is None:
-            raise commands.CommandError(T.get("errors.commandNotFound", target=target))
+            raise commands.CommandError(T.get("errors.commandNotFound", target=target), T.get("errors.commandNotFoundHint"))
         kind, name, target_id = resolved
+
+        if not enabled and kind == "command":
+            command = self.bot.get_command(name)
+            if command and command.extras.get("protected"):
+                raise commands.CommandError(T.get("errors.protectedCommand", name=name))
 
         if enabled:
             await self.bot.db.pull(table="guilds", id=ctx.guild.id, field="disabled", value=target_id)
@@ -121,7 +126,7 @@ class Configuration(commands.Cog):
         self._mutate_cache(ctx.guild.id, target_id, enabled)
 
         key = "success.commandEnabled" if enabled else "success.commandDisabled"
-        await ctx.answer(T.get(key, name=name), type="success")
+        await ctx.answer(T.get(key, name=name), type="success", bold=False)
     
     @protected
     @commands.hybrid_command(name="prefix")

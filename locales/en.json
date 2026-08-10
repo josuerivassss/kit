@@ -112,12 +112,14 @@
         "ticketDisabled": "Tickets have been disabled.",
         "welcomeEnabled": "Welcome messages have been enabled!",
         "leaveEnabled": "Leave messages have been enabled!",
-        "welcomeDisabled": "Welcome messages have been disabled.",
+        "welcomeDisabled": "Welcome messages have been disabled!",
         "leaveDisabled": "Leave messages have been disabled!",
         "welcomeChannelSet": "Welcome channel set to {channel}!",
         "leaveChannelSet": "Leave channel set to {channel}!",
         "welcomeMessageSet": "Welcome message updated!",
-        "leaveMessageSet": "Leave message updated!"
+        "leaveMessageSet": "Leave message updated!",
+        "commandEnabled": "**`{name}`** has been enabled!",
+        "commandDisabled": "**`{name}`** has been disabled!"
     },
     "errors": {
         "unauthorized": "You don't have authorization to execute this action.",
@@ -210,7 +212,10 @@
         "ticketAlreadyOpen": "You already have an open ticket: {channel}",
         "ticketMessageLength": "Message must be between 5 and 1800 characters.",
         "ticketRoleTooLargeWarning": "Heads up: this role has {count} members and doesn't have \"Manage Threads\" — I can't auto-invite everyone to new tickets. Grant the role \"Manage Threads\" so staff can see tickets automatically.",
-        "notATicket": "This command can only be used inside a ticket thread."
+        "notATicket": "This command can only be used inside a ticket thread.",
+        "commandNotFound": "No command, subcommand, or module found with the name **`{target}`**.",
+        "commandNotFoundHint": "Check spelling, or use the exact name shown in `/help` or the dashboard.",
+        "protectedCommand": "**`{name}`** is a protected command and cannot be disabled."
     }, 
     "reminders": {
         "add": {
@@ -226,7 +231,7 @@
         },
         "list": {
             "title": "Your reminders",
-            "empty": "You have dont have any reminders",
+            "empty": "You have no reminders",
             "when": "When",
             "channel": "Channel",
             "message": "Message",

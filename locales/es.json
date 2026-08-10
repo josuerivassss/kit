@@ -117,7 +117,9 @@
         "welcomeChannelSet": "¡Canal de bienvenida configurado a {channel}!",
         "leaveChannelSet": "¡Canal de despedida configurado a {channel}!",
         "welcomeMessageSet": "¡Mensaje de bienvenida actualizado!",
-        "leaveMessageSet": "¡Mensaje de despedida actualizado!"
+        "leaveMessageSet": "¡Mensaje de despedida actualizado!",
+        "commandEnabled": "**`{name}`** ha sido habilitado!",
+        "commandDisabled": "**`{name}`** ha sido deshabilitado!"
     },
     "errors": {
         "unauthorized": "No tienes autorización para ejecutar este comando.",
@@ -210,7 +212,10 @@
         "ticketAlreadyOpen": "Ya tienes un ticket abierto: {channel}",
         "ticketMessageLength": "El mensaje debe tener entre 5 y 1800 caracteres.",
         "ticketRoleTooLargeWarning": "Aviso: este rol tiene {count} miembros y no tiene \"Gestionar Hilos\" — no puedo invitar automáticamente a todos a los nuevos tickets. Otórgale al rol \"Gestionar Hilos\" para que el staff vea los tickets automáticamente.",
-        "notATicket": "Este comando solo puede usarse dentro de un hilo de ticket."
+        "notATicket": "Este comando solo puede usarse dentro de un hilo de ticket.",
+        "commandNotFound": "No se encontró ningún comando, subcomando o módulo con el nombre `{target}`.",
+        "commandNotFoundHint": "Verifica la ortografía, o usa el nombre exacto que aparece en `/help` o en el dashboard.",
+        "protectedCommand": "**`{name}`** es un comando protegido y no puede deshabilitarse."
     },
     "reminders": {
         "add": {
