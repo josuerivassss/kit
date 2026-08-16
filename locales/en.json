@@ -215,7 +215,10 @@
         "notATicket": "This command can only be used inside a ticket thread.",
         "commandNotFound": "No command, subcommand, or module found with the name **`{target}`**.",
         "commandNotFoundHint": "Check spelling, or use the exact name shown in `/help` or the dashboard.",
-        "protectedCommand": "**`{name}`** is a protected command and cannot be disabled."
+        "protectedCommand": "**`{name}`** is a protected command and cannot be disabled.",
+        "blacklisted": "You are not allowed to use this bot.",
+        "commandDisabled": "This command is currently disabled.",
+        "commandDisabledHint": "An administrator must enable this command/category for it to be usable."
     }, 
     "reminders": {
         "add": {

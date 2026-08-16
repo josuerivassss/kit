@@ -24,6 +24,7 @@ from bcommie.logging_setup import get_logger
 from bcommie.managers.language import LanguageManager
 from bcommie.security import SlidingWindowRateLimiter
 from bcommie.error_reporting import ErrorReporter
+from bcommie.blacklist import BlacklistedError, BlacklistManager
 from bcommie.toolkit import ToolKit
 
 logger = get_logger(__name__)
@@ -43,6 +44,7 @@ class CommieBot(commands.AutoShardedBot):
         self.start_time = datetime.datetime.now(datetime.UTC)
         self.slash_cache: list[discord.app_commands.AppCommand] = []
 
+        self.blacklist = BlacklistManager(self)
         self.toolkit = ToolKit(self)
         self.errors = ErrorReporter(self, settings.error_webhook_url) # Webhook for error reporting (in discord.)
         self.db = MongoDatabaseManager(uri=settings.mongo_uri, db_name=settings.mongo_db_name)
@@ -57,9 +59,24 @@ class CommieBot(commands.AutoShardedBot):
     ) -> CommieContext:
         return await super().get_context(origin, cls=cls)  # type: ignore[return-value]
 
+    async def _global_blacklist_check(self, ctx: CommieContext) -> bool:
+        """Registered as the very first bot-wide check (see setup_hook) so
+        it always runs before any other check/handler, guaranteeing total
+        silence for blacklisted entities regardless of what else applies."""
+        if await self.is_owner(ctx.author):
+            return True
+        guild_id = ctx.guild.id if ctx.guild else None
+        if self.blacklist.is_blacklisted(ctx.author.id, guild_id):
+            raise BlacklistedError()
+        return True
+
     async def setup_hook(self) -> None:
         """discord.py lifecycle hook: run once before the first gateway connection."""
         await self.toolkit.setup()
+        await self.sql.connect()
+        await self.db.connect()
+        await self.blacklist.load()
+        self.add_check(self._global_blacklist_check)
         self.errors.start()
         await self.load_extension("jishaku")
 
@@ -68,9 +85,6 @@ class CommieBot(commands.AutoShardedBot):
                 continue
             await self.load_extension(f"bcommie.cogs.{module_info.name}")
         logger.info("cogs_loaded")
-
-        await self.sql.connect()
-        await self.db.connect()
 
         self.slash_cache = await self.tree.sync()
         logger.info(

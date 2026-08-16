@@ -1,5 +1,5 @@
 """Developer/owner-only cog: diagnostics, hot-reload, API key management, and the /help entry point."""
-import discord, sys, datetime, io, json, secrets, hashlib
+import discord, sys, datetime, io, json, secrets, hashlib, asyncio, os
 from datetime import timedelta, timezone
 from typing import Literal
 from discord.ext import commands
@@ -8,6 +8,13 @@ from bcommie.help import send_help, send_help_cog, send_help_group, send_help_co
 from bcommie.kernel import AnswerType
 from bcommie.ui.paginator import Paginator
 from bcommie.introspection import build_commands_snapshot
+from bcommie.timeparse import format_duration_compound
+from bcommie.logging_setup import get_logger
+
+logger = get_logger(__name__)
+
+_GIT_COMMAND_TIMEOUT_SECONDS = 60
+_SHELL_OUTPUT_INLINE_LIMIT = 1500  # above this, send as a .txt attachment instead
 
 _BOT_INVITE_URL = "https://discord.com/oauth2/authorize?client_id=1449864932731392223&permissions=8&scope=bot+applications.commands"
 _DISCORD_INVITE_URL = "https://discord.gg/SY5D4x3RB3"
@@ -82,6 +89,68 @@ class Developer(commands.Cog):
         if sync_too:
             self.bot.slash_cache = await self.bot.tree.sync()
         await ctx.answer(f"**{name}** successfully reloaded!", bold=False, view=view, type=AnswerType.Ok)
+
+    async def _run_shell(self, *args: str, cwd: str | None = None, timeout: float = _GIT_COMMAND_TIMEOUT_SECONDS) -> tuple[int, str]:
+        """Runs a subprocess and returns (exit_code, combined_output). Never
+        raises on non-zero exit -- the caller inspects the exit code."""
+        process = await asyncio.create_subprocess_exec(
+            *args, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT,
+        )
+        try:
+            stdout, _ = await asyncio.wait_for(process.communicate(), timeout=timeout)
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            return -1, f"Command timed out after {timeout}s."
+        return process.returncode, stdout.decode(errors="replace").strip()
+
+    async def _reply_shell_output(self, ctx: CommieContext, title: str, exit_code: int, output: str) -> None:
+        status = "✅" if exit_code == 0 else "❌"
+        header = f"{status} **{title}** (exit code `{exit_code}`)"
+        body = output or "*(no output)*"
+        if len(body) <= _SHELL_OUTPUT_INLINE_LIMIT:
+            await ctx.send(f"{header}\n```\n{body}\n```")
+        else:
+            file = discord.File(io.BytesIO(body.encode("utf-8")), filename="output.txt")
+            await ctx.send(content=header, file=file)
+
+    @commands.is_owner()
+    @commands.hybrid_group(name="git")
+    async def git(self, ctx: CommieContext):
+        """Runs git operations against the bot's own repo (owner-only)"""
+        if ctx.invoked_subcommand is None:
+            cmd = self.bot.get_command("git")
+            await send_help_group(ctx, cmd, self.bot.slash_cache, await ctx.get_locale())
+
+    @commands.is_owner()
+    @git.command(name="pull")
+    async def git_pull(self, ctx: CommieContext):
+        """Runs `git pull` in the bot's working directory"""
+        await ctx.defer()
+        repo_dir = os.getcwd()
+        exit_code, output = await self._run_shell("git", "pull", "--ff-only", cwd=repo_dir)
+        await self._reply_shell_output(ctx, "git pull", exit_code, output)
+
+    @commands.is_owner()
+    @git.command(name="status")
+    async def git_status(self, ctx: CommieContext):
+        """Shows `git status` for the bot's working directory"""
+        await ctx.defer()
+        repo_dir = os.getcwd()
+        exit_code, output = await self._run_shell("git", "status", "--short", "--branch", cwd=repo_dir)
+        await self._reply_shell_output(ctx, "git status", exit_code, output)
+
+    @commands.is_owner()
+    @git.command(name="log")
+    @discord.app_commands.describe(amount="Number of recent commits to show (1-20)")
+    async def git_log(self, ctx: CommieContext, amount: commands.Range[int, 1, 20] = 5):
+        """Shows the most recent commits"""
+        await ctx.defer()
+        repo_dir = os.getcwd()
+        exit_code, output = await self._run_shell(
+            "git", "log", f"-{amount}", "--oneline", "--decorate", cwd=repo_dir
+        )
+        await self._reply_shell_output(ctx, f"git log -{amount}", exit_code, output)
     
     @commands.cooldown(1, 8, commands.BucketType.user)
     @commands.hybrid_command(name="interpolate", extras={"supports_placeholders": True})
@@ -121,8 +190,8 @@ class Developer(commands.Cog):
     @commands.hybrid_command(name="uptime")
     async def uptime(self, ctx: CommieContext):
         """Shows bot uptime"""
-        uptime = datetime.datetime.now(datetime.UTC) - self.bot.start_time
-        await ctx.send(f"Uptime: {uptime} hrs")
+        elapsed = datetime.datetime.now(datetime.UTC) - self.bot.start_time
+        await ctx.send(f"Uptime: {format_duration_compound(elapsed.total_seconds())}")
 
     @commands.hybrid_command(name="info", aliases=["software", "botinfo"])
     @discord.app_commands.allowed_installs(guilds=True, users=True)
@@ -137,7 +206,7 @@ class Developer(commands.Cog):
         embed.add_field(name="Servers", value=len(ctx.bot.guilds), inline=True)
         embed.add_field(name="Users", value=len(ctx.bot.users), inline=True)
         embed.add_field(name="Commands", value=len(ctx.bot.commands), inline=True)
-        embed.add_field(name="Uptime", value=f"{uptime}", inline=True)
+        embed.add_field(name="Uptime", value=format_duration_compound(uptime.total_seconds()), inline=True)
         embed.add_field(name="Latency", value=f"{round(self.bot.latency * 1000, 2)} ms", inline=True)
         embed.add_field(name="Shard", value=f"{shard_id} / {self.bot.shard_count or 1}", inline=True)
         embed.add_field(name="Cluster", value=str(self.bot.settings.cluster_id), inline=True)
@@ -207,6 +276,94 @@ class Developer(commands.Cog):
         paginator = Paginator(data=pages, ctx=ctx, locale=T, embed=embed, render=render)
         paginator.update_item()
         paginator.message = await ctx.send(embed=embed, view=paginator)
+
+    @commands.is_owner()
+    @commands.hybrid_group(name="blacklist")
+    async def blacklist(self, ctx: CommieContext):
+        """Manages the bot's user/guild blacklist (owner-only)"""
+        if ctx.invoked_subcommand is None:
+            cmd = self.bot.get_command("blacklist")
+            await send_help_group(ctx, cmd, self.bot.slash_cache, await ctx.get_locale())
+
+    @commands.is_owner()
+    @blacklist.command(name="add")
+    @discord.app_commands.describe(
+        target="Discord user or guild ID to blacklist",
+        kind="Whether the ID belongs to a user or a guild",
+        reason="Why this entity is being blacklisted",
+    )
+    async def blacklist_add(self, ctx: CommieContext, target: str, kind: Literal["user", "guild"] = "user", *, reason: str = "No reason provided"):
+        """Blacklists a user or guild and wipes its stored data"""
+        await ctx.defer()
+        entity_id = self._parse_snowflake(target)
+        if entity_id is None:
+            raise commands.CommandError(f"`{target}` is not a valid ID.")
+        added = await self.bot.blacklist.add(entity_id, kind, reason=reason, blacklisted_by=ctx.author.id)
+        if not added:
+            await ctx.answer(f"That {kind} is already blacklisted.", type=AnswerType.Info)
+            return
+        await self._notify_owners_of_blacklist(entity_id, kind, reason, ctx.author)
+        await ctx.answer(f"**{entity_id}** (`{kind}`) has been blacklisted and its stored data purged.", type=AnswerType.Ok, bold=False)
+
+    @commands.is_owner()
+    @blacklist.command(name="remove", aliases=["delete"])
+    @discord.app_commands.describe(target="Discord user or guild ID to remove from the blacklist", kind="Whether the ID belongs to a user or a guild")
+    async def blacklist_remove(self, ctx: CommieContext, target: str, kind: Literal["user", "guild"] = "user"):
+        """Removes a user or guild from the blacklist"""
+        await ctx.defer()
+        entity_id = self._parse_snowflake(target)
+        if entity_id is None:
+            raise commands.CommandError(f"`{target}` is not a valid ID.")
+        removed = await self.bot.blacklist.remove(entity_id, kind)
+        if not removed:
+            await ctx.answer(f"That {kind} is not blacklisted.", type=AnswerType.Info)
+            return
+        await ctx.answer(f"**{entity_id}** (`{kind}`) has been removed from the blacklist.", type=AnswerType.Ok, bold=False)
+
+    @commands.is_owner()
+    @blacklist.command(name="list", aliases=["show"])
+    async def blacklist_list(self, ctx: CommieContext):
+        """Lists every blacklisted user and guild"""
+        await ctx.defer()
+        entries = await self.bot.blacklist.list_all()
+        if not entries:
+            await ctx.answer("The blacklist is empty.", type=AnswerType.Info)
+            return
+
+        PER_PAGE = 10
+        pages = [entries[i:i + PER_PAGE] for i in range(0, len(entries), PER_PAGE)]
+        embed = discord.Embed(title="Blacklist", colour=discord.Color.dark_red())
+        embed.set_author(name=ctx.guild.name if ctx.guild else self.bot.user.name, icon_url=self.bot.user.display_avatar)
+        T = await ctx.get_locale()
+
+        def render(page_items: list[dict], page: int, total: int):
+            lines = []
+            for doc in page_items:
+                timestamp = f"<t:{doc['blacklisted_at']}:R>" if doc.get("blacklisted_at") else "unknown"
+                lines.append(f"**{doc['_id']}** (`{doc.get('type', 'user')}`) — {doc.get('reason', 'No reason provided')} · {timestamp}")
+            embed.description = "\n".join(lines)
+            embed.set_footer(text=T.get("paginator.footer", page=page + 1, total=total))
+
+        paginator = Paginator(data=pages, ctx=ctx, locale=T, embed=embed, render=render)
+        paginator.update_item()
+        paginator.message = await ctx.send(embed=embed, view=paginator)
+
+    @staticmethod
+    def _parse_snowflake(raw: str) -> int | None:
+        try:
+            return int(raw.strip("<@!>"))
+        except ValueError:
+            return None
+
+    async def _notify_owners_of_blacklist(self, entity_id: int, kind: str, reason: str, moderator: discord.abc.User) -> None:
+        """DMs every bot owner about a new blacklist entry -- the blacklisted entity itself is never notified."""
+        message = f"🔨 **Blacklist added**\nTarget: `{entity_id}` (`{kind}`)\nReason: {reason}\nBy: {moderator} (`{moderator.id}`)"
+        for owner_id in self.bot.owner_ids:
+            try:
+                owner = self.bot.get_user(owner_id) or await self.bot.fetch_user(owner_id)
+                await owner.send(message)
+            except discord.HTTPException:
+                logger.warning("blacklist_owner_dm_failed", owner_id=owner_id)
 
     def _api_keys(self):
         return self.bot.db.db["api_keys"]

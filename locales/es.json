@@ -215,7 +215,10 @@
         "notATicket": "Este comando solo puede usarse dentro de un hilo de ticket.",
         "commandNotFound": "No se encontró ningún comando, subcomando o módulo con el nombre `{target}`.",
         "commandNotFoundHint": "Verifica la ortografía, o usa el nombre exacto que aparece en `/help` o en el dashboard.",
-        "protectedCommand": "**`{name}`** es un comando protegido y no puede deshabilitarse."
+        "protectedCommand": "**`{name}`** es un comando protegido y no puede deshabilitarse.",
+        "blacklisted": "No tienes permitido usar este bot.",
+        "commandDisabled": "Este comando está deshabilitado actualmente.",
+        "commandDisabledHint": "Un administrador debe habilitar este comando/categoría para ser usable."
     },
     "reminders": {
         "add": {

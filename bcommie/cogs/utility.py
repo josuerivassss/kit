@@ -8,6 +8,8 @@ from bcommie.ui.paginator import Paginator
 from http import HTTPStatus
 from ddgs import DDGS
 
+_AFK_MENTION_COOLDOWN_SECONDS = 30  # per (mentioner, afk_user) pair -- absorbs flood-mention spam
+
 class Utility(commands.Cog):
 
     def __init__(self, bot: CommieBot):
@@ -19,9 +21,14 @@ class Utility(commands.Cog):
         # multi-process clusters where another process's afk/unafk isn't
         # visible locally yet.
         self._afk_cache: dict[int, dict] = {}
+        # Per (mentioner_id, afk_user_id) cooldown timestamps -- prevents a
+        # message-flood mentioning the same AFK user from spamming a reply
+        # for every single message.
+        self._afk_mention_cooldowns: dict[tuple[int, int], float] = {}
 
     async def _guild_language(self, guild_id: int) -> str:
         return await self.bot.db.get(table="guilds", id=guild_id, path="language") or self.bot.language.default_language
+    
 
     async def cog_load(self):
         await self._reload_afk_cache()
@@ -36,6 +43,13 @@ class Utility(commands.Cog):
             self._afk_cache = {row["id"]: row for row in rows}
         except Exception:
             pass  # keep the previous cache on transient DB failure
+        self._prune_afk_mention_cooldowns()
+
+    def _prune_afk_mention_cooldowns(self) -> None:
+        now = time.monotonic()
+        stale = [key for key, ts in self._afk_mention_cooldowns.items() if now - ts > _AFK_MENTION_COOLDOWN_SECONDS]
+        for key in stale:
+            self._afk_mention_cooldowns.pop(key, None)
 
     @tasks.loop(seconds=60)
     async def reconcile_afk_cache(self):
@@ -546,7 +560,13 @@ class Utility(commands.Cog):
         if not message.mentions:
             return
         afk_mentions = [u for u in message.mentions if u.id in self._afk_cache and u.id != message.author.id]
+        now = time.monotonic()
         for user in afk_mentions[:3]:
+            cooldown_key = (message.author.id, user.id)
+            last_notified = self._afk_mention_cooldowns.get(cooldown_key)
+            if last_notified is not None and now - last_notified < _AFK_MENTION_COOLDOWN_SECONDS:
+                continue
+            self._afk_mention_cooldowns[cooldown_key] = now
             data = self._afk_cache[user.id]
             await message.reply(T.get("afk.userIsAfk", user=user.mention, reason=data["reason"]), mention_author=False)
 

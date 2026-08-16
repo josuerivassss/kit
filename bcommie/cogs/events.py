@@ -8,6 +8,7 @@ from discord.ext import commands
 from bcommie.kernel import CommieBot, CommieContext
 from bcommie.logging_setup import get_logger
 from bcommie.cogs.configuration import CommandDisabledError
+from bcommie.blacklist import BlacklistedError
 
 logger = get_logger(__name__)
 
@@ -24,9 +25,13 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: CommieContext, error: commands.CommandError):
         T = await ctx.get_locale()
-        if isinstance(error, CommandDisabledError):
+        if isinstance(error, BlacklistedError):
             if ctx.interaction is not None and not ctx.interaction.response.is_done():
-                await ctx.interaction.response.send_message("\u200b", ephemeral=True)
+                await ctx.interaction.response.send_message(T.get("errors.blacklisted"), ephemeral=True)
+            return
+        elif isinstance(error, CommandDisabledError):
+            if ctx.interaction is not None and not ctx.interaction.response.is_done():
+                await ctx.answer(T.get("errors.commandDisabled"), hint=T.get("errors.commandDisabledHint"), ephemeral=True, type="error")
             return  # prefix invocations: fully silent, no reply at all
         elif isinstance(error, commands.CommandNotFound):
             return # silently ignore unknown commands

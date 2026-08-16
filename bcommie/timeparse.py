@@ -58,6 +58,24 @@ def ms_to_long(ms: float) -> str:
             return f"{round(ms / scale)} {_UNIT_NAMES[unit]}{plural}"
     return "0 miliseconds"
 
+def format_duration_compound(seconds: float, max_units: int = 2) -> str:
+    """Formats a duration as up to `max_units` significant short units,
+    largest-first (e.g. 176400 -> "2d 1h", 3720 -> "1h 2m", 10 -> "10s").
+    Zero-valued units in between are skipped, matching how people naturally
+    read elapsed time (uptime, cooldowns, etc.)."""
+    seconds = int(seconds)
+    if seconds <= 0:
+        return "0s"
+    parts: list[str] = []
+    remaining = seconds
+    for suffix, size in (("d", 86400), ("h", 3600), ("m", 60), ("s", 1)):
+        if remaining >= size:
+            value, remaining = divmod(remaining, size)
+            parts.append(f"{value}{suffix}")
+            if len(parts) >= max_units:
+                break
+    return " ".join(parts) if parts else "0s"
+
 
 def load(value: str | int | float, *, long: bool = False) -> float | str | None:
     """Parse a duration string to ms, or format a ms value to text."""
