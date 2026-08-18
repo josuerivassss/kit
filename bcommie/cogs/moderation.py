@@ -12,8 +12,8 @@ class Moderation(commands.Cog):
         self.bot = bot
 
     @commands.cooldown(1, 5, commands.BucketType.member)
-    @commands.has_guild_permissions(manage_channels=True)
-    @commands.bot_has_guild_permissions(manage_channels=True)
+    @commands.has_guild_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.hybrid_command(name="lockdown", aliases=["lock"])
     @discord.app_commands.describe(channel="The channel to lockdown")
     async def lockdown(self, ctx: CommieContext, channel: discord.TextChannel = None):
@@ -29,8 +29,8 @@ class Moderation(commands.Cog):
         await ctx.answer(T.get("success.channelLocked", channel=target_channel.mention), type="success")
     
     @commands.cooldown(1, 5, commands.BucketType.member)
-    @commands.has_guild_permissions(manage_channels=True)
-    @commands.bot_has_guild_permissions(manage_channels=True)
+    @commands.has_guild_permissions(manage_roles=True)
+    @commands.bot_has_guild_permissions(manage_roles=True)
     @commands.hybrid_command(name="unlockdown", aliases=["unlock"])
     @discord.app_commands.describe(channel="The channel to unlock")
     async def unlockdown(self, ctx: CommieContext, channel: discord.TextChannel = None):
