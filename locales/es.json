@@ -302,5 +302,9 @@
         "set": "¡He configurado tu estado AFK!",
         "welcomeBack": "¡Bienvenido de vuelta, {user}! He quitado tu estado AFK.",
         "userIsAfk": "¡Ups! Parece que {user} está actualmente **AFK**: {reason}"
+    },
+    "commandToggle": {
+        "nothingDisabled": "Actualmente no hay nada deshabilitado en este servidor.",
+        "disabledListTitle": "Comandos y cogs deshabilitados"
     }
 }

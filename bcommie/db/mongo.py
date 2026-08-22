@@ -230,3 +230,17 @@ class MongoDatabaseManager:
     async def pull(self, *, table: str, id: int | str, field: str, value: Any) -> bool:
         """Remove a value from an array field."""
         return await self.update(table=table, id=id, data={field: value}, operator="$pull")
+
+    async def pull_many(self, *, table: str, id: int | str, field: str, values: list[Any]) -> bool:
+        """Removes multiple values from an array field in a single round-trip
+        -- used to cascade-clear subcommand/command overrides when a broader
+        scope (a root command or a whole cog) is re-enabled."""
+        if not values:
+            return True
+        db = self._require_db()
+        try:
+            result = await db[table].update_one({"_id": id}, {"$pullAll": {field: values}})
+            return result.acknowledged
+        except Exception:
+            logger.exception("mongo_pull_many_failed", table=table, id=id)
+            return False

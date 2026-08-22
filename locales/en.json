@@ -302,5 +302,9 @@
         "set": "I've set your AFK status!",
         "welcomeBack": "Welcome back, {user}! I've removed your AFK status.",
         "userIsAfk": "Ops! It seems that {user} is currently **AFK**: {reason}"
+    },
+    "commandToggle": {
+        "nothingDisabled": "Nothing is currently disabled in this server.",
+        "disabledListTitle": "Disabled commands & cogs"
     }
 }

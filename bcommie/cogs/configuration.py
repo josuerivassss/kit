@@ -1,4 +1,18 @@
-"""Configuration cog: per-guild prefix and language settings."""
+"""Configuration cog: per-guild prefix, language settings, and command toggles.
+
+Enable/disable storage: a single flat array of IDs under `guilds.disabled`
+(see bcommie/command_registry.py for the ID scheme). Disabling a root
+command implicitly disables its subcommands (no extra writes); disabling
+a cog implicitly disables every command in it except protected ones --
+checked at invocation time rather than expanded and stored.
+
+Re-enabling a broader scope (a root command or a whole cog) cascades: it
+also clears any narrower override still sitting underneath it (e.g.
+`/enable edit` also clears a separately-disabled `edit gray`), matching
+what an admin actually expects "turn edit back on" to mean. Disabling
+never cascades writes -- the read-path check (root_id()/cog check)
+already covers subcommands, so no extra rows are needed there.
+"""
 from __future__ import annotations
 import time
 from typing import Any
@@ -28,6 +42,32 @@ def _resolve_target(bot: CommieBot, query: str) -> tuple[str, str, str] | None:
         return ("cog", cog.qualified_name, cog_id) if cog_id else None
     return None
 
+def _cascade_ids(bot: CommieBot, kind: str, name: str, target_id: str) -> set[str]:
+    """IDs to clear when re-enabling `target_id`: itself, plus every
+    narrower override nested under it -- a root command's subcommands,
+    or every command/subcommand belonging to a cog."""
+    ids = {target_id}
+    if kind == "command":
+        command = bot.get_command(name)
+        if isinstance(command, commands.HybridGroup):
+            for child in command.commands:
+                child_id = COMMAND_IDS.get(child.qualified_name)
+                if child_id:
+                    ids.add(child_id)
+    elif kind == "cog":
+        cog = bot.get_cog(name)
+        if cog is not None:
+            for top_level in cog.get_commands():
+                command_id = COMMAND_IDS.get(top_level.qualified_name)
+                if command_id:
+                    ids.add(command_id)
+                if isinstance(top_level, commands.HybridGroup):
+                    for child in top_level.commands:
+                        child_id = COMMAND_IDS.get(child.qualified_name)
+                        if child_id:
+                            ids.add(child_id)
+    return ids
+
 class LanguageMenu(discord.ui.Select):
     def __init__(self, *, ctx: CommieContext, locale: Locale):
         self.ctx = ctx
@@ -35,7 +75,7 @@ class LanguageMenu(discord.ui.Select):
         super().__init__(placeholder=self.t.get("info.selectLanguage"), max_values=1, min_values=1, options=[
             discord.SelectOption(label="English", value="en", description="Your adventure starts here!", emoji="🇺🇸"),
             discord.SelectOption(label="Español", value="es", description="Tu aventura comienza aquí!", emoji="🇲🇽")])
-    
+
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer()
         selected_language = self.values[0]
@@ -47,7 +87,7 @@ class Configuration(commands.Cog):
     def __init__(self, bot: CommieBot):
         self.bot = bot
         self._cache: dict[int, tuple[float, set[str]]] = {}
-    
+
     async def cog_load(self):
         self.bot.add_check(self._global_disabled_check)
 
@@ -65,10 +105,10 @@ class Configuration(commands.Cog):
         self._cache[guild_id] = (time.monotonic(), disabled)
         return disabled
 
-    def _mutate_cache(self, guild_id: int, target_id: str, enabled: bool) -> None:
+    def _mutate_cache(self, guild_id: int, ids: set[str], enabled: bool) -> None:
         cached = self._cache.get(guild_id)
         disabled = set(cached[1]) if cached else set()
-        disabled.discard(target_id) if enabled else disabled.add(target_id)
+        disabled.difference_update(ids) if enabled else disabled.update(ids)
         self._cache[guild_id] = (time.monotonic(), disabled)
 
     # -- global check -----------------------------------------------------------
@@ -89,7 +129,7 @@ class Configuration(commands.Cog):
         if cog_id and cog_id in disabled:
             raise CommandDisabledError()
         return True
-    
+
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     @commands.hybrid_command(name="enable")
@@ -106,6 +146,21 @@ class Configuration(commands.Cog):
         """Disables a command, subcommand, or cog for this server"""
         await self._toggle(ctx, target, enabled=False)
 
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    @commands.hybrid_command(name="disabled")
+    async def list_disabled(self, ctx: CommieContext):
+        """Lists every command, subcommand, and cog currently disabled here"""
+        await ctx.defer()
+        T = await ctx.get_locale()
+        raw = await self.bot.db.get(table="guilds", id=ctx.guild.id, path="disabled") or []
+        if not raw:
+            await ctx.answer(T.get("commandToggle.nothingDisabled"), type="info")
+            return
+        lines = [f"\u2022 `{ID_TO_COG.get(entry_id) or ID_TO_COMMAND.get(entry_id) or entry_id}` (`{entry_id}`)" for entry_id in sorted(raw)]
+        embed = discord.Embed(title=T.get("commandToggle.disabledListTitle"), description="\n".join(lines), colour=discord.Color.dark_red())
+        await ctx.send(embed=embed)
+
     async def _toggle(self, ctx: CommieContext, target: str, *, enabled: bool) -> None:
         await ctx.defer()
         T = await ctx.get_locale()
@@ -120,14 +175,16 @@ class Configuration(commands.Cog):
                 raise commands.CommandError(T.get("errors.protectedCommand", name=name))
 
         if enabled:
-            await self.bot.db.pull(table="guilds", id=ctx.guild.id, field="disabled", value=target_id)
+            ids = _cascade_ids(self.bot, kind, name, target_id)
+            await self.bot.db.pull_many(table="guilds", id=ctx.guild.id, field="disabled", values=list(ids))
         else:
+            ids = {target_id}
             await self.bot.db.push(table="guilds", id=ctx.guild.id, field="disabled", value=target_id, unique=True)
-        self._mutate_cache(ctx.guild.id, target_id, enabled)
+        self._mutate_cache(ctx.guild.id, ids, enabled)
 
         key = "success.commandEnabled" if enabled else "success.commandDisabled"
         await ctx.answer(T.get(key, name=name), type="success", bold=False)
-    
+
     @protected
     @commands.hybrid_command(name="prefix")
     @commands.cooldown(1, 120, commands.BucketType.guild)
