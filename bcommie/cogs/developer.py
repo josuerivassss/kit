@@ -10,6 +10,7 @@ from bcommie.ui.paginator import Paginator
 from bcommie.introspection import build_commands_snapshot
 from bcommie.timeparse import format_duration_compound
 from bcommie.logging_setup import get_logger
+from bcommie.permissions import protected
 
 logger = get_logger(__name__)
 
@@ -51,7 +52,8 @@ class Developer(commands.Cog):
         """Returns pong"""
         T = await ctx.get_locale()
         await ctx.send(T.get("ping", ms=round(self.bot.latency, 2)))
-    
+
+    @protected
     @commands.hybrid_command(name="invite")
     @discord.app_commands.allowed_installs(guilds=True, users=True)
     @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
@@ -66,7 +68,8 @@ class Developer(commands.Cog):
             discord.ui.Button(style=discord.ButtonStyle.link, label="Web", url=_WEB_URL)
         )
         await ctx.answer(T.get("inviteDescription"), type=AnswerType.Ok, view=view, bold=False)
-    
+
+    @protected
     @commands.is_owner()
     @commands.hybrid_command(name="reload")
     @discord.app_commands.describe(name="Cog name to reload (e.g. 'moderation')", sync_too="Whether to sync slash commands after reloading")
@@ -160,6 +163,7 @@ class Developer(commands.Cog):
         """Interpolates a string with locale placeholders"""
         await ctx.send_render(text)
 
+    @protected
     @commands.cooldown(1, 8, commands.BucketType.member)
     @commands.hybrid_command(name="help")
     async def help_command(self, ctx: CommieContext, *, query: str = None):
@@ -193,6 +197,19 @@ class Developer(commands.Cog):
         elapsed = datetime.datetime.now(datetime.UTC) - self.bot.start_time
         await ctx.send(f"Uptime: {format_duration_compound(elapsed.total_seconds())}")
 
+    @protected
+    @commands.hybrid_command(name="dashboard", aliases=["web", "website", "dash"])
+    @discord.app_commands.allowed_installs(guilds=True, users=True)
+    @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
+    async def dashboard(self, ctx: CommieContext):
+        """Shows the bot's web dashboard URL"""
+        T = await ctx.get_locale()
+        view = discord.ui.View().add_item(
+            discord.ui.Button(style=discord.ButtonStyle.link, label="Dashboard", url=_WEB_URL+"/dash")
+        )
+        await ctx.answer(T.get("dashboardDescription"), type=AnswerType.Ok, view=view, bold=False)
+
+    @protected
     @commands.hybrid_command(name="info", aliases=["software", "botinfo"])
     @discord.app_commands.allowed_installs(guilds=True, users=True)
     @discord.app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
@@ -211,21 +228,21 @@ class Developer(commands.Cog):
         embed.add_field(name="Shard", value=f"{shard_id} / {self.bot.shard_count or 1}", inline=True)
         embed.add_field(name="Cluster", value=str(self.bot.settings.cluster_id), inline=True)
         embed.add_field(name="Library", value=f"discord.py@{discord.__version__}", inline=True)
-        embed.add_field(name="Version", value="1.0.0", inline=True)
+        embed.add_field(name="Version", value=str(self.bot.settings.version), inline=True)
         embed.add_field(name="Python", value=sys.version.split(' ')[0], inline=True)
         embed.add_field(name="Platform", value=sys.platform, inline=True)
         await ctx.send(content="Here's my software specifications! " + CommieEmojis.Developer, embed=embed)
     
     @commands.is_owner()
-    @commands.hybrid_group(name="dashboard")
-    async def dashboard(self, ctx: CommieContext):
+    @commands.hybrid_group(name="dashboardmanager")
+    async def dashboardmanager(self, ctx: CommieContext):
         """Manages web dashboard access (owner-only)"""
         if ctx.invoked_subcommand is None:
             cmd = self.bot.get_command("dashboard")
             await send_help_group(ctx, cmd, self.bot.slash_cache, await ctx.get_locale())
 
     @commands.is_owner()
-    @dashboard.command(name="grant")
+    @dashboardmanager.command(name="grant")
     @discord.app_commands.describe(user="The Discord user to grant dashboard access to")
     async def dashboard_grant(self, ctx: CommieContext, user: discord.User):
         """Grants a user access to the web dashboard"""
@@ -242,7 +259,7 @@ class Developer(commands.Cog):
         await ctx.answer(f"Dashboard access granted to **{user}**.", type=AnswerType.Ok)
 
     @commands.is_owner()
-    @dashboard.command(name="revoke")
+    @dashboardmanager.command(name="revoke")
     @discord.app_commands.describe(user="The Discord user to revoke dashboard access from")
     async def dashboard_revoke(self, ctx: CommieContext, user: discord.User):
         """Revokes a user's access to the web dashboard"""
@@ -254,7 +271,7 @@ class Developer(commands.Cog):
         await ctx.answer(f"Dashboard access revoked from **{user}**.", type=AnswerType.Ok)
     
     @commands.is_owner()
-    @dashboard.command(name="list")
+    @dashboardmanager.command(name="list")
     async def dashboard_list(self, ctx: CommieContext):
         """Lists every user currently authorized to use the web dashboard"""
         await ctx.defer()

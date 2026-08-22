@@ -1,6 +1,7 @@
 {
     "ping": "¡Pong! La latencia es de {ms}ms",
     "inviteDescription": "¡Gracias por tu interés en **Commie**!\n\nUsa los botones de abajo para invitar a Commie a tu servidor, unirte a la comunidad oficial o explorar otros enlaces importantes del proyecto.\n\nTu apoyo impulsa el desarrollo de nuevas funciones, mejoras continuas y una mejor experiencia para toda la comunidad.\n\n❤️ ¡Nos vemos en el servidor!",
+    "dashboardDescription": "Commie tiene un panel web que te permite gestionar la configuración de tu servidor y personalizar tu experiencia con facilidad. Accede al panel usando el botón de abajo.",
     "info": {
         "created": "Creado el",
         "joined": "Se unió el",
@@ -218,7 +219,12 @@
         "protectedCommand": "**`{name}`** es un comando protegido y no puede deshabilitarse.",
         "blacklisted": "No tienes permitido usar este bot.",
         "commandDisabled": "Este comando está deshabilitado actualmente.",
-        "commandDisabledHint": "Un administrador debe habilitar este comando/categoría para ser usable."
+        "commandDisabledHint": "Un administrador debe habilitar este comando/categoría para ser usable.",
+        "captionEmpty": "Necesitas proporcionar algún texto de leyenda.",
+        "captionTooLong": "El texto de leyenda es demasiado largo.",
+        "captionTooLongHint": "Máximo {max} caracteres",
+        "noImageFound": "No pude encontrar una imagen para usar.",
+        "noImageFoundHint": "Responde a un mensaje con una imagen, o adjunta/pega una directamente."
     },
     "reminders": {
         "add": {

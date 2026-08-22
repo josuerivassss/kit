@@ -51,6 +51,8 @@ COMMAND_IDS: dict[str, str] = {
     "emojify": "5",
     "reverse": "6",
     "ship": "7",
+    "caption": "35", # added in 1.1.1
+    "gif": "36", # added in 1.1.1
     # Greetings
     "leave": "8",
     "leave channel": "8.1",

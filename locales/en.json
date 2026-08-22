@@ -1,6 +1,7 @@
 {
     "ping": "Pong! The latency is {ms}ms",
     "inviteDescription": "Thanks for your interest in **Commie**!\n\nUse the buttons below to invite Commie to your server, join the official community, or explore other important project links.\n\nYour support helps drive new features, continuous improvements, and a better experience for everyone.\n\n❤️ See you around!",
+    "dashboardDescription": "Commie has a web dashboard that allows you to manage your server settings and customize your experience with ease. Access the dashboard using the button below.",
     "info": {
         "created": "Created at",
         "joined": "Joined at",
@@ -218,7 +219,12 @@
         "protectedCommand": "**`{name}`** is a protected command and cannot be disabled.",
         "blacklisted": "You are not allowed to use this bot.",
         "commandDisabled": "This command is currently disabled.",
-        "commandDisabledHint": "An administrator must enable this command/category for it to be usable."
+        "commandDisabledHint": "An administrator must enable this command/category for it to be usable.",
+        "captionEmpty": "You need to provide some caption text.",
+        "captionTooLong": "The caption text is too long.",
+        "captionTooLongHint": "Maximum {max} characters",
+        "noImageFound": "I couldn't find an image to use.",
+        "noImageFoundHint": "Reply to a message with an image, or attach/paste one directly."
     }, 
     "reminders": {
         "add": {
