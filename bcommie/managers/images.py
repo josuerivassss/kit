@@ -189,8 +189,17 @@ class ImagesManager:
         except Exception as exc:
             raise ValueError("Invalid image data") from exc
 
-    def to_bytes(self, image: Image.Image, format: str = "PNG", quality: int = 95, optimize: bool = False, **kwargs: Any) -> bytes:
-        """Encode a PIL image to bytes in the given format."""
+    def to_bytes(self, image: Image.Image, format: str = "PNG", quality: int = 95, optimize: bool = False, flatten: bool = False, **kwargs: Any) -> bytes:
+        """Encode a PIL image to bytes in the given format.
+
+        `flatten=True` forces full opacity before saving. Pasting a semi-transparent
+        overlay (edit filters) also blends down the base's own alpha wherever the
+        overlay itself was translucent, so the "flat" meme image ended up carrying
+        real transparency, rendering differently per client depending on what
+        background color each one composites it against.
+        """
+        if flatten and image.mode in ("RGBA", "LA"):
+            image.putalpha(255)
         buffer = BytesIO()
         params = dict(kwargs)
         if format.upper() in ("JPEG", "JPG"):

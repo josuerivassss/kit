@@ -9,6 +9,7 @@ from assets.gifs import Collection
 
 _CAPTION_MAX_LENGTH = 200
 _CAPTION_MAX_DIMENSION = 700
+_CAPTION_IDEAL_WIDTH = 500
 _CAPTION_MIN_FONT_SIZE = 18
 _CAPTION_MAX_FONT_SIZE = 60
 _CAPTION_PADDING = 20
@@ -53,6 +54,16 @@ async def _referenced_message(ctx: CommieContext) -> Optional[discord.Message]:
         return None
 
 
+async def _read_static_avatar(user: discord.User) -> bytes:
+    """Reads a user's display avatar, forcing a static frame for GIF
+    avatars -- PIL edits only ever touch a single frame, and feeding it the
+    raw animated asset wasn't rendering at all."""
+    asset = user.display_avatar
+    if asset.is_animated():
+        asset = asset.with_static_format("png")
+    return await asset.read()
+
+
 async def resolve_image_bytes(
     ctx: CommieContext,
     user: Optional[discord.User] = None,
@@ -61,17 +72,8 @@ async def resolve_image_bytes(
     history_limit: int = _GIF_HISTORY_SCAN_LIMIT,
     fallback_avatar: bool = True,
 ) -> Optional[bytes]:
-    """NotSoBot-style image resolution, checked in order:
-    1. An explicitly mentioned user -> their avatar.
-    2. A reply to a message carrying an image (attachment, animated gifs use
-       their first frame automatically via Pillow, or embed image/thumbnail).
-    3. The invoking message's own attachment/embed.
-    4. (opt-in) The most recent image posted earlier in the channel.
-    5. (opt-in) The invoking author's own avatar as a final fallback.
-    Returns None if nothing was found and `fallback_avatar` is disabled.
-    """
     if user is not None:
-        return await user.display_avatar.read()
+        return await _read_static_avatar(user)
 
     replied = await _referenced_message(ctx)
     if replied is not None:
@@ -90,7 +92,7 @@ async def resolve_image_bytes(
                 return data
 
     if fallback_avatar:
-        return await ctx.author.display_avatar.read()
+        return await _read_static_avatar(ctx.author)
     return None
 
 
@@ -131,7 +133,7 @@ class Fun(commands.Cog):
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         overlay = self.bot.toolkit.images.fetch("communism")
         avatar.paste(overlay, (0, 0), overlay)
-        await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(avatar, filename="communist.png"))
+        await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(avatar, filename="communist.png", flatten=True))
 
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="simp")
@@ -143,7 +145,7 @@ class Fun(commands.Cog):
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         overlay = self.bot.toolkit.images.fetch("simp")
         avatar.paste(overlay, (0, 0), overlay)
-        await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(avatar, filename="simp.png"))
+        await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(avatar, filename="simp.png", flatten=True))
 
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="delete")
@@ -167,7 +169,7 @@ class Fun(commands.Cog):
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         overlay = self.bot.toolkit.images.fetch("rainbow")
         avatar.paste(overlay, (0, 0), overlay)
-        await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(avatar, filename="rainbow.png"))
+        await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(avatar, filename="rainbow.png", flatten=True))
 
     @commands.cooldown(1, 6, commands.BucketType.user)
     @edit.command(name="deepfry", aliases=["contrast"])
@@ -272,8 +274,8 @@ class Fun(commands.Cog):
         content = f"**{user1.name}** & **{user2.name}** = **{r}%** compatible! :heart:"
         base = Image.new("RGBA", (750, 250))
 
-        av1 = self.bot.toolkit.images.from_bytes(await user1.display_avatar.read())
-        av2 = self.bot.toolkit.images.from_bytes(await user2.display_avatar.read())
+        av1 = self.bot.toolkit.images.from_bytes(await _read_static_avatar(user1))
+        av2 = self.bot.toolkit.images.from_bytes(await _read_static_avatar(user2))
 
         def cover(img: Image.Image, w: int, h: int) -> Image.Image:
             scale = max(w / img.width, h / img.height)
@@ -298,14 +300,16 @@ class Fun(commands.Cog):
         overlay = self.bot.toolkit.images.fetch(f"heart_{style}").resize((120, 120), Image.Resampling.LANCZOS)
         base.paste(overlay, (base.width // 2 - overlay.width // 2, 65), overlay)
 
-        await ctx.send(content=content+"\n"+self.show, file=self.bot.toolkit.images.to_file(base, "ship.png"))
+        await ctx.send(content=content+"\n"+self.show, file=self.bot.toolkit.images.to_file(base, "ship.png", flatten=True))
 
     async def _build_caption_bar(self, text: str, width: int) -> Image.Image:
         """Renders the white, black bold-text bar shown above the image,
         shrinking the font until the wrapped text fits the target width.
         Uses the emoji-aware text pipeline (measure_text/render_text) so the
         measured height always matches what actually gets drawn, and so
-        emoji in the caption render as glyphs instead of tofu boxes."""
+        emoji in the caption render as glyphs instead of tofu boxes.
+        Sizes the bar from the text's actual ink (not the font's em box), so
+        the padding above and below the text ends up visually equal."""
         max_text_width = width - _CAPTION_PADDING * 2
         font, lines = None, text
         for font_size in range(_CAPTION_MAX_FONT_SIZE, _CAPTION_MIN_FONT_SIZE - 1, -4):
@@ -315,12 +319,17 @@ class Fun(commands.Cog):
             if text_width <= max_text_width:
                 lines = wrapped
                 break
-        _, text_height = await self.bot.toolkit.images.measure_text(font, lines)
 
-        bar = Image.new("RGBA", (width, text_height + _CAPTION_PADDING * 2), "white")
+        split_lines = lines.split("\n")
+        spacing = 4
+        ink_top = font.getbbox(split_lines[0])[1]
+        ink_bottom = font.getbbox(split_lines[-1])[3]
+        ink_height = (len(split_lines) - 1) * (font.size + spacing) + ink_bottom - ink_top
+
+        bar = Image.new("RGBA", (width, ink_height + _CAPTION_PADDING * 2), "white")
         await self.bot.toolkit.images.render_text(
-            bar, (0, _CAPTION_PADDING), lines, font,
-            fill=(0, 0, 0, 255), align="center", max_width=width,
+            bar, (0, _CAPTION_PADDING - ink_top), lines, font,
+            fill=(0, 0, 0, 255), align="center", max_width=width, spacing=spacing,
         )
         return bar
 
@@ -342,6 +351,10 @@ class Fun(commands.Cog):
         if max(base.size) > _CAPTION_MAX_DIMENSION:
             scale = _CAPTION_MAX_DIMENSION / max(base.size)
             base = base.resize((max(1, int(base.width * scale)), max(1, int(base.height * scale))), Image.Resampling.LANCZOS)
+        if base.width < _CAPTION_IDEAL_WIDTH:
+            # small sources (most avatars) otherwise cramp even a short caption into a tiny font
+            scale = _CAPTION_IDEAL_WIDTH / base.width
+            base = base.resize((_CAPTION_IDEAL_WIDTH, max(1, int(base.height * scale))), Image.Resampling.LANCZOS)
 
         bar = await self._build_caption_bar(text, base.width)
         canvas = Image.new("RGBA", (base.width, base.height + bar.height), "white")

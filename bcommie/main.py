@@ -32,6 +32,7 @@ from bcommie.config import get_settings
 from bcommie.kernel.bot import CommieBot
 from bcommie.kernel.tree import CommieTreeClass
 from bcommie.logging_setup import configure_logging, get_logger
+from bcommie import patches
 
 os.environ.setdefault("JISHAKU_NO_UNDERSCORE", "True")
 os.environ.setdefault("JISHAKU_NO_DM_TRACEBACK", "True")
@@ -63,6 +64,7 @@ def build_bot() -> CommieBot:
     """Construct a fully configured (but not yet connected) CommieBot."""
     settings = get_settings()
     configure_logging(settings)
+    patches.apply() # monkeypatch discord.py's asset getters to avoid flakey .gif avatars
 
     bot = CommieBot(
         command_prefix=_get_prefix,
