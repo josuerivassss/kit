@@ -300,28 +300,28 @@ class Fun(commands.Cog):
 
         await ctx.send(content=content+"\n"+self.show, file=self.bot.toolkit.images.to_file(base, "ship.png"))
 
-    def _build_caption_bar(self, text: str, width: int) -> Image.Image:
+    async def _build_caption_bar(self, text: str, width: int) -> Image.Image:
         """Renders the white, black bold-text bar shown above the image,
-        shrinking the font until the wrapped text fits the target width."""
+        shrinking the font until the wrapped text fits the target width.
+        Uses the emoji-aware text pipeline (measure_text/render_text) so the
+        measured height always matches what actually gets drawn, and so
+        emoji in the caption render as glyphs instead of tofu boxes."""
         max_text_width = width - _CAPTION_PADDING * 2
         font, lines = None, text
         for font_size in range(_CAPTION_MAX_FONT_SIZE, _CAPTION_MIN_FONT_SIZE - 1, -4):
             font = self.bot.toolkit.fonts.fetch("GGsans", size=font_size, style="bold")
             wrapped = self.bot.toolkit.images.wrap_text(text, font, max_text_width)
-            text_width, _ = self.bot.toolkit.images.calculate_text_bbox(font, wrapped)
+            text_width, _ = await self.bot.toolkit.images.measure_text(font, wrapped)
             if text_width <= max_text_width:
                 lines = wrapped
                 break
-        _, text_height = self.bot.toolkit.images.calculate_text_bbox(font, lines)
+        _, text_height = await self.bot.toolkit.images.measure_text(font, lines)
 
         bar = Image.new("RGBA", (width, text_height + _CAPTION_PADDING * 2), "white")
-        draw = ImageDraw.Draw(bar)
-        y = _CAPTION_PADDING
-        for line in lines.split("\n"):
-            bbox = font.getbbox(line)
-            x = (width - (bbox[2] - bbox[0])) // 2
-            draw.text((x, y), line, font=font, fill="black")
-            y += font.size + 4
+        await self.bot.toolkit.images.render_text(
+            bar, (0, _CAPTION_PADDING), lines, font,
+            fill=(0, 0, 0, 255), align="center", max_width=width,
+        )
         return bar
 
     @commands.cooldown(1, 7, commands.BucketType.user)
@@ -343,7 +343,7 @@ class Fun(commands.Cog):
             scale = _CAPTION_MAX_DIMENSION / max(base.size)
             base = base.resize((max(1, int(base.width * scale)), max(1, int(base.height * scale))), Image.Resampling.LANCZOS)
 
-        bar = self._build_caption_bar(text, base.width)
+        bar = await self._build_caption_bar(text, base.width)
         canvas = Image.new("RGBA", (base.width, base.height + bar.height), "white")
         canvas.paste(bar, (0, 0))
         canvas.paste(base, (0, bar.height), base)

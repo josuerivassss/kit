@@ -59,13 +59,6 @@ class Events(commands.Cog):
             return await ctx.answer(f"{T.get('errors.botMissingPermissions')}", hint=T.get("errors.botMissingPermissionsHint", permissions=missing), type="error", bold=False)
         elif isinstance(error, commands.NoPrivateMessage):
             return await ctx.answer(f"{T.get('errors.noDM')}", hint=T.get("errors.noDMHint"), type="error")
-        elif isinstance(error, commands.CommandError):
-            message = error.args[0] if error.args else T.get('errors.unexpectedError')
-            hint = error.args[1] if len(error.args) > 1 else ''
-            if hint:
-                return await ctx.answer(f"{message}", hint=hint, type="error")
-            else:
-                return await ctx.answer(message, type="error")
         else:
             await ctx.answer(f"{T.get('errors.unexpectedError')}", hint=T.get("errors.unexpectedErrorHint"), type="error", deleteAfter=10)
             logger.exception(
