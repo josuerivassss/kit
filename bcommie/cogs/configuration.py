@@ -131,6 +131,7 @@ class Configuration(commands.Cog):
         return True
 
     @commands.guild_only()
+    @protected
     @commands.has_permissions(manage_guild=True)
     @commands.hybrid_command(name="enable")
     @discord.app_commands.describe(target="The command, subcommand, or cog to enable")
@@ -139,6 +140,7 @@ class Configuration(commands.Cog):
         await self._toggle(ctx, target, enabled=True)
 
     @commands.guild_only()
+    @protected
     @commands.has_permissions(manage_guild=True)
     @commands.hybrid_command(name="disable")
     @discord.app_commands.describe(target="The command, subcommand, or cog to disable")
@@ -147,6 +149,7 @@ class Configuration(commands.Cog):
         await self._toggle(ctx, target, enabled=False)
 
     @commands.guild_only()
+    @protected
     @commands.has_permissions(manage_guild=True)
     @commands.hybrid_command(name="disabled")
     async def list_disabled(self, ctx: CommieContext):
