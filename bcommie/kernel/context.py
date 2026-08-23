@@ -38,6 +38,28 @@ class CommieContext(commands.Context):
         """Load the Locale object for `get_language()`."""
         return self.bot.language.get_locale(await self.get_language())
 
+    async def think(self, *, emoji: bool = True, typing: bool = True) -> None:
+        """Signals a response is coming. Interactions get `defer()`; prefix
+        messages have no such state, so instead get a clock reaction and/or
+        a typing indicator. Each option is attempted independently -- one
+        failing (e.g. missing permissions) never blocks the other."""
+        if self.interaction is not None:
+            try:
+                await self.defer()
+            except discord.HTTPException:
+                pass
+            return
+        if emoji:
+            try:
+                await self.message.add_reaction("\u23f0")
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                pass
+        if typing:
+            try:
+                await self.channel.trigger_typing()
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                pass
+
     async def answer(
         self,
         message: str,

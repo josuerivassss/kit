@@ -129,6 +129,11 @@ class ImagesManager:
             segments.append((buffer, False))
         return segments
 
+    def strip_emojis(self, text: str) -> str:
+        """Removes emoji characters, leaving only plain text -- useful for font-
+        metric measurements, since emoji render as pasted images, not glyphs."""
+        return "".join(seg for seg, is_emoji in self._parse_text_with_emojis(text) if not is_emoji)
+
     # -- core access ------------------------------------------------------
 
     def fetch(self, name: str) -> Image.Image:
@@ -252,7 +257,8 @@ class ImagesManager:
         """Draw multi-line, emoji-aware text onto `image` in place."""
         draw = ImageDraw.Draw(image)
         x, y = xy
-        emoji_size = int(font.size * emoji_scale)
+        ascent, _ = font.getmetrics()
+        emoji_size = int(ascent * emoji_scale)
 
         for line in text.split("\n"):
             segments = self._parse_text_with_emojis(line)
@@ -271,7 +277,9 @@ class ImagesManager:
                 if is_emoji:
                     emoji_img = await self._get_emoji_image(segment, emoji_size)
                     if emoji_img:
-                        image.paste(emoji_img, (current_x, y + (font.size - emoji_size) // 2), emoji_img)
+                        # anchor the emoji's bottom to the text baseline, not
+                        # to the full font.size box, or it sinks below it
+                        image.paste(emoji_img, (current_x, y + ascent - emoji_size), emoji_img)
                         current_x += emoji_size + 2
                 else:
                     draw.text(
@@ -286,7 +294,8 @@ class ImagesManager:
         self, font: ImageFont.FreeTypeFont, text: str, spacing: int = 4, emoji_scale: float = 1.0
     ) -> tuple[int, int]:
         """Measure the pixel (width, height) of emoji-aware multi-line text."""
-        emoji_size = int(font.size * emoji_scale)
+        ascent, _ = font.getmetrics()
+        emoji_size = int(ascent * emoji_scale)
         max_width, total_height = 0, 0
         lines = text.split("\n")
         for idx, line in enumerate(lines):
@@ -304,7 +313,8 @@ class ImagesManager:
         words = text.split(" ")
         lines: list[str] = []
         current: list[str] = []
-        emoji_size = int(font.size * emoji_scale)
+        ascent, _ = font.getmetrics()
+        emoji_size = int(ascent * emoji_scale)
 
         for word in words:
             test_line = " ".join([*current, word])

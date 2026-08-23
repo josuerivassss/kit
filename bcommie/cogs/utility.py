@@ -94,7 +94,7 @@ class Utility(commands.Cog):
         
         embed = discord.Embed(colour=discord.Color.dark_red())
         embed.set_author(name=user.name, icon_url=user.display_avatar)
-        embed.set_image(url=str(user.display_avatar).replace(".webp", ".png"))
+        embed.set_image(url=user.display_avatar)
         await ctx.send(embed=embed)
 
     @commands.cooldown(1, 4, commands.BucketType.member)

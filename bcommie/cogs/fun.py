@@ -128,7 +128,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a communist image of")
     async def image_communism(self, ctx: CommieContext, user: Optional[discord.User]):
         """Makes a communist image of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         overlay = self.bot.toolkit.images.fetch("communism")
@@ -140,7 +140,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a simp image of")
     async def image_simp(self, ctx: CommieContext, user: Optional[discord.User]):
         """Makes a simp image of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         overlay = self.bot.toolkit.images.fetch("simp")
@@ -152,7 +152,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a delete image of")
     async def image_delete(self, ctx: CommieContext, user: Optional[discord.User]):
         """Makes a delete image of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         background = self.bot.toolkit.images.fetch("delete")
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((180, 180))
@@ -164,7 +164,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a pride-gay image of")
     async def image_rainbow(self, ctx: CommieContext, user: Optional[discord.User]):
         """Makes a pride-gay image of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         overlay = self.bot.toolkit.images.fetch("rainbow")
@@ -176,7 +176,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a deepfry image of")
     async def image_deepfry(self, ctx: CommieContext, user: Optional[discord.User]):
         """Applies a deepfry filter to the avatar of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(ImageEnhance.Contrast(avatar).enhance(5), filename="deepfry.png"))
@@ -186,7 +186,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a grayscale image of")
     async def image_gray(self, ctx: CommieContext, user: Optional[discord.User]):
         """Applies a gray-scale filter to the avatar of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(ImageOps.grayscale(avatar), filename="grayscale.png"))
@@ -196,7 +196,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a mirror image of")
     async def image_mirror(self, ctx: CommieContext, user: Optional[discord.User]):
         """Applies a gray-scale filter to the avatar of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         await ctx.send(content=self.show, file=self.bot.toolkit.images.to_file(ImageOps.mirror(avatar), filename="deepfry.png"))
@@ -206,7 +206,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="The user to make a pixelated image of")
     async def image_pixel(self, ctx: CommieContext, user: Optional[discord.User]):
         """Pixelates the avatar of an user"""
-        await ctx.defer()
+        await ctx.think()
         image_bytes = await resolve_image_bytes(ctx, user)
         avatar = self.bot.toolkit.images.from_bytes(image_bytes).resize((512, 512))
         org_size = avatar.size
@@ -220,7 +220,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(text="The text to make sonic say")
     async def image_sonic(self, ctx: CommieContext, *, text: str):
         """Make a sonic says image"""
-        await ctx.defer()
+        await ctx.think()
         font = self.bot.toolkit.fonts.fetch("Chirp", size=18)
         background = self.bot.toolkit.images.fetch("sonic")
         text = self.bot.toolkit.images.wrap_text(text, font, 350)
@@ -233,7 +233,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(text1="The text for the titan", text2="The text for the person")
     async def image_titan(self, ctx: CommieContext, text1: str, text2: str):
         """Make a titan attack image"""
-        await ctx.defer()
+        await ctx.think()
         font = self.bot.toolkit.fonts.fetch("Chirp", size=40)
         background = self.bot.toolkit.images.fetch("titan")
         text1 = self.bot.toolkit.images.wrap_text(text1, font, 280)
@@ -248,7 +248,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(text1="The text for the left side", text2="The text for the right side")
     async def image_twoways(self, ctx: CommieContext, text1: str, text2: str):
         """Make a two ways image"""
-        await ctx.defer()
+        await ctx.think()
         font = self.bot.toolkit.fonts.fetch("GGsans", size=33, style="bold")
         background = self.bot.toolkit.images.fetch("twoways")
         text1 = self.bot.toolkit.images.wrap_text(text1, font, 300)
@@ -263,7 +263,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user1="The first user to ship", user2="The second user to ship")
     async def image_ship(self, ctx: CommieContext, user1: discord.User, user2: Optional[discord.User] = None):
         """Ships two users together"""
-        await ctx.defer()
+        await ctx.think()
         if user2 is None:
             user2 = user1
             user1 = ctx.author
@@ -322,8 +322,10 @@ class Fun(commands.Cog):
 
         split_lines = lines.split("\n")
         spacing = 4
-        ink_top = font.getbbox(split_lines[0])[1]
-        ink_bottom = font.getbbox(split_lines[-1])[3]
+        first_line = self.bot.toolkit.images.strip_emojis(split_lines[0]) or " "
+        last_line = self.bot.toolkit.images.strip_emojis(split_lines[-1]) or " "
+        ink_top = font.getbbox(first_line)[1]
+        ink_bottom = font.getbbox(last_line)[3]
         ink_height = (len(split_lines) - 1) * (font.size + spacing) + ink_bottom - ink_top
 
         bar = Image.new("RGBA", (width, ink_height + _CAPTION_PADDING * 2), "white")
@@ -338,7 +340,7 @@ class Fun(commands.Cog):
     @discord.app_commands.describe(user="Whose image to caption (optional)", text="The caption text")
     async def caption(self, ctx: CommieContext, user: Optional[discord.User], *, text: str):
         """Adds a meme-style caption bar (black text on white) above an image"""
-        await ctx.defer()
+        await ctx.think()
         T = await ctx.get_locale()
         text = text.strip()
         if not text:
@@ -367,7 +369,7 @@ class Fun(commands.Cog):
     @commands.hybrid_command(name="gif")
     async def to_gif(self, ctx: CommieContext):
         """Converts an image into a single-frame GIF, handy for saving to favorites"""
-        await ctx.defer()
+        await ctx.think()
         T = await ctx.get_locale()
         image_bytes = await resolve_image_bytes(ctx, search_history=True, fallback_avatar=False)
         if image_bytes is None:
