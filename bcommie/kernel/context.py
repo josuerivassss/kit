@@ -38,7 +38,7 @@ class CommieContext(commands.Context):
         """Load the Locale object for `get_language()`."""
         return self.bot.language.get_locale(await self.get_language())
 
-    async def think(self, *, emoji: bool = True, typing: bool = True) -> None:
+    async def think(self, *, emoji: bool = True, typing: bool = False) -> None:
         """Signals a response is coming. Interactions get `defer()`; prefix
         messages have no such state, so instead get a clock reaction and/or
         a typing indicator. Each option is attempted independently -- one
@@ -56,7 +56,7 @@ class CommieContext(commands.Context):
                 pass
         if typing:
             try:
-                await self.channel.trigger_typing()
+                await self.channel.typing()
             except (discord.NotFound, discord.Forbidden, discord.HTTPException):
                 pass
 
